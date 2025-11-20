@@ -9,7 +9,15 @@ class Graph {
 
     private static final double CENTER_X = 400;
     private static final double CENTER_Y = 300;
-    private static final double LAYOUT_RADIUS = 200;
+    private static final double LAYOUT_RADIUS = 220; // Increased for bigger nodes
+
+    // List of Indonesian cities
+    private static final String[] INDONESIAN_CITIES = {
+            "Jakarta", "Surabaya", "Bandung", "Medan", "Semarang",
+            "Makassar", "Palembang", "Tangerang", "Depok", "Bekasi",
+            "Yogyakarta", "Malang", "Bogor", "Batam", "Pekanbaru",
+            "Bandar Lampung", "Padang", "Denpasar", "Samarinda", "Manado"
+    };
 
     public Graph(int[][] adjacencyMatrix, boolean directed) {
         this.directed = directed;
@@ -21,12 +29,15 @@ class Graph {
     private void buildGraph(int[][] matrix) {
         int n = matrix.length;
 
-        // Create nodes in circular layout
+        // Create nodes in circular layout with city names
         for (int i = 0; i < n; i++) {
             double angle = 2 * Math.PI * i / n - Math.PI / 2;
             double x = CENTER_X + LAYOUT_RADIUS * Math.cos(angle);
             double y = CENTER_Y + LAYOUT_RADIUS * Math.sin(angle);
-            nodes.add(new Node(i, x, y));
+
+            // Use city name from the list (cycle if more nodes than cities)
+            String cityName = INDONESIAN_CITIES[i % INDONESIAN_CITIES.length];
+            nodes.add(new Node(i, cityName, x, y));
         }
 
         // Create edges from adjacency matrix

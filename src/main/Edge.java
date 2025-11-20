@@ -30,16 +30,21 @@ class Edge {
             drawArrow(g2d, start, end);
         }
 
-        // Draw weight label (always show weight, even if it's 1)
+        // Draw weight label with "km" unit
         int midX = (int)((start.x + end.x) / 2);
         int midY = (int)((start.y + end.y) / 2);
+
+        // Draw background for weight label (larger for "km" text)
         g2d.setColor(new Color(220, 20, 60));
-        g2d.fillOval(midX - 12, midY - 12, 24, 24);
+        g2d.fillRoundRect(midX - 22, midY - 12, 44, 24, 8, 8);
         g2d.setColor(Color.WHITE);
         g2d.setStroke(new BasicStroke(2));
-        g2d.drawOval(midX - 12, midY - 12, 24, 24);
-        g2d.setFont(new Font("Arial", Font.BOLD, 12));
-        String weightStr = String.valueOf(weight);
+        g2d.drawRoundRect(midX - 22, midY - 12, 44, 24, 8, 8);
+
+        // Draw weight with "km"
+        g2d.setColor(Color.WHITE);
+        g2d.setFont(new Font("Arial", Font.BOLD, 11));
+        String weightStr = weight + " km";
         FontMetrics fm = g2d.getFontMetrics();
         int textWidth = fm.stringWidth(weightStr);
         g2d.drawString(weightStr, midX - textWidth/2, midY + 4);

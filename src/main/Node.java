@@ -5,16 +5,19 @@ import java.awt.geom.*;
 
 class Node {
     private int id;
+    private String cityName;
     private Point2D.Double position;
-    private static final int RADIUS = 25;
+    private static final int RADIUS = 40; // Increased radius for city names
     private boolean dragging = false;
 
-    public Node(int id, double x, double y) {
+    public Node(int id, String cityName, double x, double y) {
         this.id = id;
+        this.cityName = cityName;
         this.position = new Point2D.Double(x, y);
     }
 
     public int getId() { return id; }
+    public String getCityName() { return cityName; }
     public Point2D.Double getPosition() { return position; }
     public int getRadius() { return RADIUS; }
     public boolean isDragging() { return dragging; }
@@ -37,14 +40,15 @@ class Node {
         g2d.fillOval((int)(position.x - RADIUS), (int)(position.y - RADIUS),
                 RADIUS * 2, RADIUS * 2);
         g2d.setColor(Color.WHITE);
-        g2d.setStroke(new BasicStroke(2));
+        g2d.setStroke(new BasicStroke(3));
         g2d.drawOval((int)(position.x - RADIUS), (int)(position.y - RADIUS),
                 RADIUS * 2, RADIUS * 2);
 
+        // Draw city name
         g2d.setColor(Color.WHITE);
-        g2d.setFont(new Font("Arial", Font.BOLD, 14));
+        g2d.setFont(new Font("Arial", Font.BOLD, 12));
         FontMetrics fm = g2d.getFontMetrics();
-        String label = String.valueOf(id);
+        String label = cityName;
         int textWidth = fm.stringWidth(label);
         int textHeight = fm.getAscent();
         g2d.drawString(label, (int)(position.x - textWidth/2),
