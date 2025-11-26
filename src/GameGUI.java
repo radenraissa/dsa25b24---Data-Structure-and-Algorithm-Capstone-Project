@@ -2,7 +2,6 @@ import javax.swing.*;
 import javax.swing.Timer;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.geom.*;
 import java.util.*;
 
 class GameGUI extends JFrame {
@@ -129,22 +128,58 @@ class GameGUI extends JFrame {
 
         rollButton.setEnabled(false);
         Player currentPlayer = turnManager.getCurrentPlayer();
+        int currentPos = currentPlayer.getPosition();
 
         dice.roll();
         dicePanel.setRolled(true);
 
-        int steps = calculateSteps();
+        int steps = dice.getNumber();
+        boolean isGreen = (dice.getColor() == Dice.DiceColor.GREEN);
+
+        if (!isGreen) steps = -steps;
+
         log(currentPlayer.getName() + " rolled: " + dice.getColorString() + " " + dice.getNumber() +
                 " = " + (steps >= 0 ? "+" : "") + steps);
 
-        int currentPos = currentPlayer.getPosition();
+        // --- LOGIKA DIJKSTRA (PRIMA + HIJAU) ---
+        if (isGreen && isPrime(currentPos)) {
+            log("✨ POSISI PRIMA (" + currentPos + ")! Dijkstra Aktif! ✨");
+
+            // 1. Panggil Algoritma Manual
+            DijkstraAlgorithm solver = new DijkstraAlgorithm(board);
+            ArrayList<Integer> fullPath = solver.getShortestPath(currentPos, 100);
+
+            // 2. Potong jalur sesuai langkah dadu
+            ArrayList<Integer> actualPath = new ArrayList<>();
+            actualPath.add(currentPos);
+
+            int stepsTaken = 0;
+            // Mulai dari index 1 karena index 0 adalah posisi sekarang
+            for (int i = 1; i < fullPath.size(); i++) {
+                if (stepsTaken < steps) {
+                    actualPath.add(fullPath.get(i));
+                    stepsTaken++;
+                } else {
+                    break;
+                }
+            }
+
+            // 3. Jalankan Animasi
+            movementManager.setPath(actualPath);
+            isAnimating = true;
+            infoLabel.setText("Moving via Dijkstra...");
+            animateMovement(currentPlayer);
+            return; // Selesai, keluar dari method
+        }
+
+        // --- LOGIKA BIASA (FALLBACK) ---
         int newPos = currentPos + steps;
 
         if (newPos < 1) {
             newPos = 1;
             log("⚠ Cannot go below position 1!");
         } else if (newPos > 100) {
-            log("⚠ Cannot exceed 100! Need exact landing.");
+            log("⚠ Cannot exceed 100!");
             newPos = currentPos;
         }
 
@@ -218,6 +253,20 @@ class GameGUI extends JFrame {
             steps = -dice.getNumber();
         }
         return steps;
+    }
+
+    static boolean isPrime(int n)
+    {
+        if (n <= 1) {
+            return false;
+        }
+
+        for (int i = 2; i < n; i++) {
+            if (n % i == 0){
+                return false;
+            }
+        }
+        return true;
     }
 
     private void log(String message) {

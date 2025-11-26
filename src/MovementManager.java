@@ -1,8 +1,5 @@
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.geom.*;
 import java.util.*;
+
 class MovementManager {
     private Stack<Integer> movementStack;
 
@@ -10,24 +7,27 @@ class MovementManager {
         this.movementStack = new Stack<>();
     }
 
+    // Dipakai untuk dadu biasa (Merah/Hijau non-prima)
     public void buildMovementStack(int fromPos, int toPos) {
         movementStack.clear();
-
         if (fromPos < toPos) {
-            for (int i = toPos; i > fromPos; i--) {
-                movementStack.push(i);
-            }
+            for (int i = toPos; i > fromPos; i--) movementStack.push(i);
         } else if (fromPos > toPos) {
-            for (int i = toPos; i < fromPos; i++) {
-                movementStack.push(i);
-            }
+            for (int i = toPos; i < fromPos; i++) movementStack.push(i);
+        }
+    }
+
+    // --- BARU: Dipakai untuk Dijkstra ---
+    public void setPath(ArrayList<Integer> path) {
+        movementStack.clear();
+        // Masukkan ke stack secara terbalik (kecuali posisi awal index 0)
+        for (int i = path.size() - 1; i > 0; i--) {
+            movementStack.push(path.get(i));
         }
     }
 
     public Integer popNextPosition() {
-        if (!movementStack.isEmpty()) {
-            return movementStack.pop();
-        }
+        if (!movementStack.isEmpty()) return movementStack.pop();
         return null;
     }
 
