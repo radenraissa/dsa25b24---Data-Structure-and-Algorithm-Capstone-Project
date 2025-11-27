@@ -247,17 +247,8 @@ class GameGUI extends JFrame {
     }
 
     private void finishTurn(Player player) {
-        int currentPos = player.getPosition();
 
-        // Check if landed on ladder
-        Ladder ladder = board.getLadderAt(currentPos);
-        if (ladder != null) {
-            int newPos = ladder.getTop();
-            player.setPosition(newPos);
-            boardPanel.repaint();
-            log("🪜 " + player.getName() + " naik tangga ke posisi " + newPos + "!");
-        }
-
+        // Pastikan kita mencatat posisi akhir yang benar setelah animasi
         log(player.getName() + " is now at position " + player.getPosition());
 
         if (player.getPosition() == 100) {
