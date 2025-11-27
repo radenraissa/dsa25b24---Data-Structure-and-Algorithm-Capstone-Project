@@ -1,14 +1,20 @@
 import java.awt.*;
+import java.util.Stack;
 
 class Player {
     private String name;
     private int position;
     private Color color;
 
+    private Stack<Integer> history;
+
     public Player(String name, Color color) {
         this.name = name;
         this.position = 1;
         this.color = color;
+
+        this.history = new Stack<>();
+        this.history.push(1);
     }
 
     public String getName() { return name; }
@@ -19,8 +25,19 @@ class Player {
         this.position = position;
     }
 
-    @Override
-    public String toString() {
-        return name + " @ " + position;
+    public void recordStep(int pos) {
+        history.push(pos);
+    }
+
+    public int undoStep() {
+        if (history.size() > 1) {
+            history.pop();
+            return history.peek();
+        }
+        return 1;
+    }
+
+    public int peekHistory() {
+        return history.isEmpty() ? 1 : history.peek();
     }
 }
