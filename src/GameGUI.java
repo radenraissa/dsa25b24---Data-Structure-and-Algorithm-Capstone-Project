@@ -143,7 +143,7 @@ class GameGUI extends JFrame {
 
         // --- LOGIKA DIJKSTRA (PRIMA + HIJAU) ---
         if (isGreen && isPrime(currentPos)) {
-            log("✨ POSISI PRIMA (" + currentPos + ")! Dijkstra Aktif! ✨");
+            log("it's prime number (" + currentPos + ")! Dijkstra's activated! ✨");
 
             // 1. Panggil Algoritma Manual
             DijkstraAlgorithm solver = new DijkstraAlgorithm(board);
@@ -156,11 +156,15 @@ class GameGUI extends JFrame {
             int stepsTaken = 0;
             // Mulai dari index 1 karena index 0 adalah posisi sekarang
             for (int i = 1; i < fullPath.size(); i++) {
-                if (stepsTaken < steps) {
-                    actualPath.add(fullPath.get(i));
-                    stepsTaken++;
+                int prevNode = fullPath.get(i-1);
+                int currNode = fullPath.get(i);
+                int stepCost = (Math.abs(currNode - prevNode) > 1) ? 0 : 1;
+
+                if (stepsTaken + stepCost <= steps) {
+                    actualPath.add(currNode);
+                    stepsTaken += stepCost; // Tambahkan cost (0 atau 1)
                 } else {
-                    break;
+                    break; // Dadu habis
                 }
             }
 
