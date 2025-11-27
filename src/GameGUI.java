@@ -136,62 +136,95 @@ class GameGUI extends JFrame {
         int steps = dice.getNumber();
         boolean isGreen = (dice.getColor() == Dice.DiceColor.GREEN);
 
-        if (!isGreen) steps = -steps;
+        String direction = isGreen ? "MAJU (Green)" : "MUNDUR (Red)";
+        log(currentPlayer.getName() + " rolled " + direction + ": " + steps);
 
-        log(currentPlayer.getName() + " rolled: " + dice.getColorString() + " " + dice.getNumber() +
-                " = " + (steps >= 0 ? "+" : "") + steps);
+        // ============================================================
+        // SKENARIO 1: DADU MERAH (MUNDUR) - TETAP PAKAI STACK (REVISI 2)
+        // ============================================================
+        if (!isGreen) {
+            ArrayList<Integer> backwardPath = new ArrayList<>();
+            backwardPath.add(currentPos);
 
-        // --- LOGIKA DIJKSTRA (PRIMA + HIJAU) ---
-        if (isGreen && isPrime(currentPos)) {
-            log("it's prime number (" + currentPos + ")! Dijkstra's activated! ✨");
+            for (int i = 0; i < steps; i++) {
+                int prevPos = currentPlayer.undoStep(); // Mundur sesuai jejak sejarah
+                backwardPath.add(prevPos);
 
-            // 1. Panggil Algoritma Manual
+                if (prevPos == 1) break;
+            }
+
+            movementManager.setPath(backwardPath);
+            isAnimating = true;
+            infoLabel.setText("Retracing steps...");
+            animateMovement(currentPlayer);
+            return;
+        }
+
+        // ============================================================
+        // SKENARIO 2: MAJU - POSISI PRIMA (DIJKSTRA AKTIF)
+        // ============================================================
+        boolean isPrime = isPrime(currentPos);
+
+        if (isGreen && isPrime) {
+            log("✨ POSISI PRIMA (" + currentPos + ")! Dijkstra Aktif! ✨");
+
             DijkstraAlgorithm solver = new DijkstraAlgorithm(board);
             ArrayList<Integer> fullPath = solver.getShortestPath(currentPos, 100);
 
-            // 2. Potong jalur sesuai langkah dadu
+            // LOGIKA BARU (KEMBALI KE ASAL):
+            // Setiap perpindahan dihitung 1 langkah (termasuk naik tangga)
+
             ArrayList<Integer> actualPath = new ArrayList<>();
             actualPath.add(currentPos);
 
             int stepsTaken = 0;
+            // Kita loop path hasil Dijkstra
             for (int i = 1; i < fullPath.size(); i++) {
+                // Sesuai request kamu:
                 if (stepsTaken < steps) {
-                    actualPath.add(fullPath.get(i));
-                    stepsTaken++;
+                    int nextNode = fullPath.get(i);
+                    actualPath.add(nextNode);
+
+                    // REKAM JEJAK (PENTING BUAT MUNDUR NANTI)
+                    currentPlayer.recordStep(nextNode);
+
+                    stepsTaken++; // Selalu nambah 1, entah itu jalan biasa atau tangga
                 } else {
                     break;
                 }
             }
 
-            // 3. Jalankan Animasi
             movementManager.setPath(actualPath);
             isAnimating = true;
             infoLabel.setText("Moving via Dijkstra...");
             animateMovement(currentPlayer);
-            return; // Selesai, keluar dari method
+            return;
         }
 
-        // --- LOGIKA BIASA (FALLBACK) ---
-        int newPos = currentPos + steps;
+        // ============================================================
+        // SKENARIO 3: MAJU BIASA (NON-PRIMA = TANGGA MATI)
+        // ============================================================
+        ArrayList<Integer> normalPath = new ArrayList<>();
+        normalPath.add(currentPos);
 
-        if (newPos < 1) {
-            newPos = 1;
-            log("⚠ Cannot go below position 1!");
-        } else if (newPos > 100) {
-            log("⚠ Cannot exceed 100!");
-            newPos = currentPos;
+        int tempPos = currentPos;
+        for (int i = 0; i < steps; i++) {
+            tempPos++;
+            if (tempPos > 100) {
+                tempPos--;
+                break;
+            }
+
+            normalPath.add(tempPos);
+
+            // REKAM JEJAK (PENTING BUAT MUNDUR NANTI)
+            currentPlayer.recordStep(tempPos);
         }
 
-        movementManager.buildMovementStack(currentPos, newPos);
-
-        if (movementManager.hasMovement()) {
-            isAnimating = true;
-            infoLabel.setText("Moving...");
-            animateMovement(currentPlayer);
-        } else {
-            log("No movement.");
-            finishTurn(currentPlayer);
-        }
+        movementManager.setPath(normalPath);
+        isAnimating = true;
+        infoLabel.setText("Moving...");
+        animateMovement(currentPlayer);
     }
 
     private void animateMovement(Player player) {
