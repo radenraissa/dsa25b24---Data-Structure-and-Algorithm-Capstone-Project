@@ -64,10 +64,10 @@ class GameGUI extends JFrame {
     }
 
     private void initGUI() {
-        setTitle("Ular Tangga Game - GUI Version");
+        setTitle("Ular Tangga Game - Snake Path Board");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout(10, 10));
-        getContentPane().setBackground(new Color(48, 71, 186));  // Biru tua (kiri atas)
+        getContentPane().setBackground(new Color(48, 71, 186));
 
         boardPanel = new BoardPanel(board);
         boardPanel.setPlayers(turnManager.getAllPlayers());
@@ -75,7 +75,7 @@ class GameGUI extends JFrame {
 
         JPanel rightPanel = new JPanel();
         rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
-        rightPanel.setBackground(new Color(48, 71, 186));  // Biru tua (kiri atas)
+        rightPanel.setBackground(new Color(48, 71, 186));
         rightPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         turnLabel = new JLabel("Turn: " + turnManager.getCurrentPlayer().getName());
@@ -92,7 +92,7 @@ class GameGUI extends JFrame {
 
         rollButton = new JButton("ROLL DICE");
         rollButton.setFont(new Font("Arial", Font.BOLD, 16));
-        rollButton.setBackground(new Color(91, 192, 235));  // Biru muda/cyan (kiri bawah)
+        rollButton.setBackground(new Color(91, 192, 235));
         rollButton.setForeground(Color.WHITE);
         rollButton.setFocusPainted(false);
         rollButton.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -121,6 +121,7 @@ class GameGUI extends JFrame {
         setResizable(false);
 
         log("Game started! " + turnManager.getCurrentPlayer().getName() + "'s turn.");
+        log("Total positions: " + board.getSize()); // Info jumlah kotak
     }
 
     private void rollDice() {
@@ -128,103 +129,35 @@ class GameGUI extends JFrame {
 
         rollButton.setEnabled(false);
         Player currentPlayer = turnManager.getCurrentPlayer();
-        int currentPos = currentPlayer.getPosition();
 
         dice.roll();
         dicePanel.setRolled(true);
 
-        int steps = dice.getNumber();
-        boolean isGreen = (dice.getColor() == Dice.DiceColor.GREEN);
+        int steps = calculateSteps();
+        log(currentPlayer.getName() + " rolled: " + dice.getColorString() + " " + dice.getNumber() +
+                " = " + (steps >= 0 ? "+" : "") + steps);
 
-        String direction = isGreen ? "MAJU (Green)" : "MUNDUR (Red)";
-        log(currentPlayer.getName() + " rolled " + direction + ": " + steps);
+        int currentPos = currentPlayer.getPosition();
+        int newPos = currentPos + steps;
 
-        // ============================================================
-        // SKENARIO 1: DADU MERAH (MUNDUR) - TETAP PAKAI STACK (REVISI 2)
-        // ============================================================
-        if (!isGreen) {
-            ArrayList<Integer> backwardPath = new ArrayList<>();
-            backwardPath.add(currentPos);
+        if (newPos < 1) {
+            newPos = 1;
+            log("⚠ Cannot go below position 1!");
+        } else if (newPos > board.getSize()) {
+            log("⚠ Cannot exceed " + board.getSize() + "! Need exact landing.");
+            newPos = currentPos;
+        }
 
-            for (int i = 0; i < steps; i++) {
-                int prevPos = currentPlayer.undoStep(); // Mundur sesuai jejak sejarah
-                backwardPath.add(prevPos);
+        movementManager.buildMovementStack(currentPos, newPos);
 
-                if (prevPos == 1) break;
-            }
-
-            movementManager.setPath(backwardPath);
+        if (movementManager.hasMovement()) {
             isAnimating = true;
-            infoLabel.setText("Retracing steps...");
+            infoLabel.setText("Moving...");
             animateMovement(currentPlayer);
-            return;
+        } else {
+            log("No movement.");
+            finishTurn(currentPlayer);
         }
-
-        // ============================================================
-        // SKENARIO 2: MAJU - POSISI PRIMA (DIJKSTRA AKTIF)
-        // ============================================================
-        boolean isPrime = isPrime(currentPos);
-
-        if (isGreen && isPrime) {
-            log("✨ POSISI PRIMA (" + currentPos + ")! Dijkstra Aktif! ✨");
-
-            DijkstraAlgorithm solver = new DijkstraAlgorithm(board);
-            ArrayList<Integer> fullPath = solver.getShortestPath(currentPos, 100);
-
-            // LOGIKA BARU (KEMBALI KE ASAL):
-            // Setiap perpindahan dihitung 1 langkah (termasuk naik tangga)
-
-            ArrayList<Integer> actualPath = new ArrayList<>();
-            actualPath.add(currentPos);
-
-            int stepsTaken = 0;
-            // Kita loop path hasil Dijkstra
-            for (int i = 1; i < fullPath.size(); i++) {
-                // Sesuai request kamu:
-                if (stepsTaken < steps) {
-                    int nextNode = fullPath.get(i);
-                    actualPath.add(nextNode);
-
-                    // REKAM JEJAK (PENTING BUAT MUNDUR NANTI)
-                    currentPlayer.recordStep(nextNode);
-
-                    stepsTaken++; // Selalu nambah 1, entah itu jalan biasa atau tangga
-                } else {
-                    break;
-                }
-            }
-
-            movementManager.setPath(actualPath);
-            isAnimating = true;
-            infoLabel.setText("Moving via Dijkstra...");
-            animateMovement(currentPlayer);
-            return;
-        }
-
-        // ============================================================
-        // SKENARIO 3: MAJU BIASA (NON-PRIMA = TANGGA MATI)
-        // ============================================================
-        ArrayList<Integer> normalPath = new ArrayList<>();
-        normalPath.add(currentPos);
-
-        int tempPos = currentPos;
-        for (int i = 0; i < steps; i++) {
-            tempPos++;
-            if (tempPos > 100) {
-                tempPos--;
-                break;
-            }
-
-            normalPath.add(tempPos);
-
-            // REKAM JEJAK (PENTING BUAT MUNDUR NANTI)
-            currentPlayer.recordStep(tempPos);
-        }
-
-        movementManager.setPath(normalPath);
-        isAnimating = true;
-        infoLabel.setText("Moving...");
-        animateMovement(currentPlayer);
     }
 
     private void animateMovement(Player player) {
@@ -247,11 +180,19 @@ class GameGUI extends JFrame {
     }
 
     private void finishTurn(Player player) {
+        int currentPos = player.getPosition();
 
-        // Pastikan kita mencatat posisi akhir yang benar setelah animasi
+        Ladder ladder = board.getLadderAt(currentPos);
+        if (ladder != null) {
+            int newPos = ladder.getTop();
+            player.setPosition(newPos);
+            boardPanel.repaint();
+            log("🪜 " + player.getName() + " naik tangga ke posisi " + newPos + "!");
+        }
+
         log(player.getName() + " is now at position " + player.getPosition());
 
-        if (player.getPosition() == 100) {
+        if (player.getPosition() == board.getSize()) {
             log("🎉 " + player.getName() + " WINS! 🎉");
             JOptionPane.showMessageDialog(this,
                     player.getName() + " wins the game!",
@@ -276,20 +217,6 @@ class GameGUI extends JFrame {
             steps = -dice.getNumber();
         }
         return steps;
-    }
-
-    static boolean isPrime(int n)
-    {
-        if (n <= 1) {
-            return false;
-        }
-
-        for (int i = 2; i < n; i++) {
-            if (n % i == 0){
-                return false;
-            }
-        }
-        return true;
     }
 
     private void log(String message) {

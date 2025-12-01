@@ -6,13 +6,16 @@ import java.util.List;
 
 class Board {
     private BoardNode[] nodes;
-    private static final int SIZE = 100;
+    private static final int SIZE = 60; // Dikurangi jadi 60 kotak
     private List<Ladder> ladders;
+    private List<Point> snakePath; // Path ular meliuk
 
     public Board() {
         nodes = new BoardNode[SIZE + 1];
         ladders = new ArrayList<>();
+        snakePath = new ArrayList<>();
         createGraph();
+        createSnakePath(); // Buat jalur ular
         createLadders();
     }
 
@@ -27,13 +30,70 @@ class Board {
         }
     }
 
+    // Membuat jalur ular yang meliuk-liuk
+    private void createSnakePath() {
+        // Jalur ular berbentuk S meliuk dari kiri atas ke kanan bawah
+        // Menggunakan kurva Bezier untuk efek smooth
+
+        int canvasWidth = 600;
+        int canvasHeight = 600;
+
+        // Control points untuk membuat kurva ular yang meliuk
+        Point[] controlPoints = {
+                new Point(50, 50),    // Start (kiri atas)
+                new Point(150, 100),
+                new Point(250, 80),
+                new Point(350, 150),
+                new Point(450, 120),
+                new Point(520, 180),
+                new Point(480, 250),
+                new Point(380, 280),
+                new Point(280, 320),
+                new Point(200, 380),
+                new Point(120, 420),
+                new Point(180, 480),
+                new Point(280, 510),
+                new Point(380, 500),
+                new Point(480, 520),
+                new Point(550, 550)   // Finish (kanan bawah)
+        };
+
+        // Generate smooth path menggunakan interpolasi
+        for (int i = 0; i < controlPoints.length - 1; i++) {
+            Point p1 = controlPoints[i];
+            Point p2 = controlPoints[i + 1];
+
+            int steps = SIZE / (controlPoints.length - 1);
+            for (int j = 0; j < steps; j++) {
+                float t = (float) j / steps;
+                int x = (int) (p1.x + t * (p2.x - p1.x));
+                int y = (int) (p1.y + t * (p2.y - p1.y));
+
+                // Tambahkan sedikit variasi untuk efek meliuk
+                double wave = Math.sin(snakePath.size() * 0.3) * 15;
+                x += wave;
+
+                snakePath.add(new Point(x, y));
+            }
+        }
+
+        // Pastikan ada tepat SIZE posisi
+        while (snakePath.size() < SIZE) {
+            Point last = snakePath.get(snakePath.size() - 1);
+            snakePath.add(new Point(last.x + 5, last.y + 5));
+        }
+        while (snakePath.size() > SIZE) {
+            snakePath.remove(snakePath.size() - 1);
+        }
+    }
+
     private void createLadders() {
-        // 5 tangga sesuai klarifikasi - CORRECTED
-        ladders.add(new Ladder(16, 25));   // Tangga 1: 16 → 25
-        ladders.add(new Ladder(34, 67));   // Tangga 2: 34 → 67
-        ladders.add(new Ladder(39, 79));   // Tangga 3: 39 → 79
-        ladders.add(new Ladder(57, 86));   // Tangga 4: 57 → 86
-        ladders.add(new Ladder(72, 93));   // Tangga 5: 72 → 93
+        // Arrow hijau shortcuts di jalur ular
+        ladders.add(new Ladder(8, 15));
+        ladders.add(new Ladder(18, 28));
+        ladders.add(new Ladder(25, 38));
+        ladders.add(new Ladder(35, 48));
+        ladders.add(new Ladder(42, 55));
     }
 
     public BoardNode getNode(int position) {
@@ -44,10 +104,8 @@ class Board {
     }
 
     public int getSize() { return SIZE; }
-
     public List<Ladder> getLadders() { return ladders; }
 
-    // Check if position has ladder
     public Ladder getLadderAt(int position) {
         for (Ladder ladder : ladders) {
             if (ladder.getBottom() == position) {
@@ -57,18 +115,13 @@ class Board {
         return null;
     }
 
-    // Convert position to grid coordinates (row, col)
-    public Point getGridPosition(int position) {
-        if (position < 1 || position > 100) return new Point(0, 0);
+    // Get posisi dalam path ular
+    public Point getSnakePosition(int position) {
+        if (position < 1 || position > SIZE) return new Point(0, 0);
+        return snakePath.get(position - 1);
+    }
 
-        int adjustedPos = position - 1;
-        int row = 9 - (adjustedPos / 10);
-        int col = adjustedPos % 10;
-
-        if ((9 - row) % 2 == 1) {
-            col = 9 - col;
-        }
-
-        return new Point(col, row);
+    public List<Point> getSnakePath() {
+        return snakePath;
     }
 }
