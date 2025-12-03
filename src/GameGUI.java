@@ -55,63 +55,78 @@ class GameGUI extends JFrame {
     }
 
     private void initGUI() {
-        setTitle("Modified Snake & Ladder - 74 Nodes Edition");
+        setTitle("Snake & Ladder Adventure");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new BorderLayout(10, 10));
-        getContentPane().setBackground(new Color(48, 71, 186));
+        setLayout(new BorderLayout()); // Hapus gap default
 
-        // Board panel (center)
+        // Ganti background utama jadi warna langit cerah biar senada
+        getContentPane().setBackground(new Color(135, 206, 235));
+
+        // Board panel
         boardPanel = new BoardPanel(board);
         boardPanel.setPlayers(turnManager.getAllPlayers());
         add(boardPanel, BorderLayout.CENTER);
 
-        // Right control panel
+        // --- PANEL KANAN (UI) YANG LEBIH CANTIK ---
         JPanel rightPanel = new JPanel();
         rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
-        rightPanel.setBackground(new Color(48, 71, 186));
-        rightPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        // Warna Background Panel: Putih Tulang Semi-Transparan
+        // Ini biar terlihat modern dan bersih
+        rightPanel.setBackground(new Color(245, 245, 245));
+        rightPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 2, 0, 0, new Color(189, 195, 199)), // Garis pemisah
+                BorderFactory.createEmptyBorder(20, 20, 20, 20) // Padding dalam
+        ));
+        rightPanel.setPreferredSize(new Dimension(280, 0)); // Lebarkan dikit
 
-        // Turn label
+        // 1. JUDUL GILIRAN
         turnLabel = new JLabel("Turn: " + turnManager.getCurrentPlayer().getName());
-        turnLabel.setFont(new Font("Arial", Font.BOLD, 20));
-        turnLabel.setForeground(Color.WHITE);
+        turnLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        turnLabel.setForeground(new Color(44, 62, 80)); // Warna Font Gelap Elegan
         turnLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         rightPanel.add(turnLabel);
-        rightPanel.add(Box.createVerticalStrut(20));
+        rightPanel.add(Box.createVerticalStrut(30));
 
-        // Dice panel
+        // 2. DADU PANEL (Perlu update DicePanel agar backgroundnya nyatu, lihat bawah)
         dicePanel = new DicePanel(dice);
+        // Buat background dice panel transparan agar nyatu dengan rightPanel
+        dicePanel.setBackground(new Color(0,0,0,0));
+        dicePanel.setOpaque(false);
         dicePanel.setAlignmentX(Component.CENTER_ALIGNMENT);
         rightPanel.add(dicePanel);
-        rightPanel.add(Box.createVerticalStrut(20));
+        rightPanel.add(Box.createVerticalStrut(30));
 
-        // Roll button
-        rollButton = new JButton("🎲 ROLL DICE");
-        rollButton.setFont(new Font("Arial", Font.BOLD, 16));
-        rollButton.setBackground(new Color(91, 192, 235));
+        // 3. TOMBOL ROLL (Gaya Modern Flat)
+        rollButton = new JButton("ROLL DICE");
+        rollButton.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        rollButton.setBackground(new Color(46, 204, 113)); // Hijau tombol start
         rollButton.setForeground(Color.WHITE);
         rollButton.setFocusPainted(false);
+        rollButton.setBorder(BorderFactory.createEmptyBorder(10, 30, 10, 30));
+        rollButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         rollButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        rollButton.setMaximumSize(new Dimension(180, 45));
         rollButton.addActionListener(e -> rollDice());
         rightPanel.add(rollButton);
         rightPanel.add(Box.createVerticalStrut(20));
 
-        // Info label
-        infoLabel = new JLabel(" ");
-        infoLabel.setFont(new Font("Arial", Font.PLAIN, 14));
-        infoLabel.setForeground(Color.WHITE);
+        // 4. INFO LABEL
+        infoLabel = new JLabel("Click Roll to Start");
+        infoLabel.setFont(new Font("Segoe UI", Font.ITALIC, 14));
+        infoLabel.setForeground(Color.DARK_GRAY);
         infoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         rightPanel.add(infoLabel);
         rightPanel.add(Box.createVerticalStrut(20));
 
-        // Log area
+        // 5. LOG AREA (Lebih bersih)
         logArea = new JTextArea(15, 20);
         logArea.setEditable(false);
-        logArea.setFont(new Font("Monospaced", Font.PLAIN, 11));
-        logArea.setBackground(new Color(44, 62, 80));
-        logArea.setForeground(Color.WHITE);
+        logArea.setFont(new Font("Consolas", Font.PLAIN, 12));
+        logArea.setBackground(Color.WHITE); // Putih bersih
+        logArea.setForeground(new Color(50, 50, 50));
+
+        // Tambah border halus ke log area
         JScrollPane scrollPane = new JScrollPane(logArea);
+        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
         scrollPane.setAlignmentX(Component.CENTER_ALIGNMENT);
         rightPanel.add(scrollPane);
 
@@ -122,7 +137,6 @@ class GameGUI extends JFrame {
 
         log("🎮 Game started!");
         log("First turn: " + turnManager.getCurrentPlayer().getName());
-        log("Click 'ROLL DICE' to begin");
     }
 
     private void rollDice() {
