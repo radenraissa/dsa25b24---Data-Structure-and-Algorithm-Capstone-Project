@@ -6,94 +6,90 @@ import java.util.List;
 
 class Board {
     private BoardNode[] nodes;
-    private static final int SIZE = 60; // Dikurangi jadi 60 kotak
+    private static final int SIZE = 100;
     private List<Ladder> ladders;
-    private List<Point> snakePath; // Path ular meliuk
+    private Map<Integer, Point> positionMap; // Peta posisi ke koordinat grid
 
     public Board() {
         nodes = new BoardNode[SIZE + 1];
         ladders = new ArrayList<>();
-        snakePath = new ArrayList<>();
+        positionMap = new HashMap<>();
         createGraph();
-        createSnakePath(); // Buat jalur ular
         createLadders();
+        createPositionMap(); // Tambahkan peta posisi
     }
 
     private void createGraph() {
         for (int i = 1; i <= SIZE; i++) {
             nodes[i] = new BoardNode(i);
         }
-
         for (int i = 1; i < SIZE; i++) {
             nodes[i].setNext(nodes[i + 1]);
             nodes[i + 1].setPrev(nodes[i]);
         }
     }
 
-    // Membuat jalur ular yang meliuk-liuk
-    private void createSnakePath() {
-        // Jalur ular berbentuk S meliuk dari kiri atas ke kanan bawah
-        // Menggunakan kurva Bezier untuk efek smooth
-
-        int canvasWidth = 600;
-        int canvasHeight = 600;
-
-        // Control points untuk membuat kurva ular yang meliuk
-        Point[] controlPoints = {
-                new Point(50, 50),    // Start (kiri atas)
-                new Point(150, 100),
-                new Point(250, 80),
-                new Point(350, 150),
-                new Point(450, 120),
-                new Point(520, 180),
-                new Point(480, 250),
-                new Point(380, 280),
-                new Point(280, 320),
-                new Point(200, 380),
-                new Point(120, 420),
-                new Point(180, 480),
-                new Point(280, 510),
-                new Point(380, 500),
-                new Point(480, 520),
-                new Point(550, 550)   // Finish (kanan bawah)
-        };
-
-        // Generate smooth path menggunakan interpolasi
-        for (int i = 0; i < controlPoints.length - 1; i++) {
-            Point p1 = controlPoints[i];
-            Point p2 = controlPoints[i + 1];
-
-            int steps = SIZE / (controlPoints.length - 1);
-            for (int j = 0; j < steps; j++) {
-                float t = (float) j / steps;
-                int x = (int) (p1.x + t * (p2.x - p1.x));
-                int y = (int) (p1.y + t * (p2.y - p1.y));
-
-                // Tambahkan sedikit variasi untuk efek meliuk
-                double wave = Math.sin(snakePath.size() * 0.3) * 15;
-                x += wave;
-
-                snakePath.add(new Point(x, y));
-            }
-        }
-
-        // Pastikan ada tepat SIZE posisi
-        while (snakePath.size() < SIZE) {
-            Point last = snakePath.get(snakePath.size() - 1);
-            snakePath.add(new Point(last.x + 5, last.y + 5));
-        }
-        while (snakePath.size() > SIZE) {
-            snakePath.remove(snakePath.size() - 1);
-        }
+    private void createLadders() {
+        // Tambahkan posisi ladder sesuai gambar layout baru
+        ladders.add(new Ladder(3, 22));
+        ladders.add(new Ladder(5, 8));
+        ladders.add(new Ladder(11, 26));
+        ladders.add(new Ladder(20, 29));
+        ladders.add(new Ladder(27, 56));
+        // Tambahkan sesuai layout gambar Anda
     }
 
-    private void createLadders() {
-        // Arrow hijau shortcuts di jalur ular
-        ladders.add(new Ladder(8, 15));
-        ladders.add(new Ladder(18, 28));
-        ladders.add(new Ladder(25, 38));
-        ladders.add(new Ladder(35, 48));
-        ladders.add(new Ladder(42, 55));
+    private void createPositionMap() {
+        // Sesuaikan posisi dan koordinatnya sesuai layout gambar
+        // Format: posisi -> Point(x, y)
+        positionMap.put(1, new Point(0, 9));
+        positionMap.put(2, new Point(1, 9));
+        positionMap.put(3, new Point(2, 9));
+        positionMap.put(4, new Point(3, 9));
+        positionMap.put(5, new Point(4, 9));
+        positionMap.put(6, new Point(5, 9));
+        positionMap.put(7, new Point(6, 9));
+        positionMap.put(8, new Point(7, 9));
+        positionMap.put(9, new Point(8, 9));
+        positionMap.put(10, new Point(9, 9));
+        // Baris atas
+        positionMap.put(11, new Point(9, 8));
+        positionMap.put(12, new Point(8, 8));
+        positionMap.put(13, new Point(7, 8));
+        positionMap.put(14, new Point(6, 8));
+        positionMap.put(15, new Point(5, 8));
+        positionMap.put(16, new Point(4, 8));
+        positionMap.put(17, new Point(3, 8));
+        positionMap.put(18, new Point(2, 8));
+        positionMap.put(19, new Point(1, 8));
+        positionMap.put(20, new Point(0, 8));
+        // Baris kedua
+        positionMap.put(21, new Point(0, 7));
+        positionMap.put(22, new Point(1, 7));
+        positionMap.put(23, new Point(2, 7));
+        positionMap.put(24, new Point(3, 7));
+        positionMap.put(25, new Point(4, 7));
+        positionMap.put(26, new Point(5, 7));
+        positionMap.put(27, new Point(6, 7));
+        positionMap.put(28, new Point(7, 7));
+        positionMap.put(29, new Point(8, 7));
+        positionMap.put(30, new Point(9, 7));
+        // dan seterusnya hingga posisi 100 sesuai layout gambar
+        // Pastikan semua posisi dari 1 s/d 100 terisi sesuai layout
+        // Anda bisa menambahkan semua posisi sesuai gambar
+        positionMap.put(31, new Point(9, 6));
+        positionMap.put(32, new Point(8, 6));
+        positionMap.put(33, new Point(7, 6));
+        positionMap.put(34, new Point(6, 6));
+        positionMap.put(35, new Point(5, 6));
+        positionMap.put(36, new Point(4, 6));
+        positionMap.put(37, new Point(3, 6));
+        positionMap.put(38, new Point(2, 6));
+        positionMap.put(39, new Point(1, 6));
+        positionMap.put(40, new Point(0, 6));
+        // Tambahkan semua posisi hingga 100 sesuai layout
+        // ...
+        positionMap.put(100, new Point(9, 0));
     }
 
     public BoardNode getNode(int position) {
@@ -103,8 +99,13 @@ class Board {
         return null;
     }
 
-    public int getSize() { return SIZE; }
-    public List<Ladder> getLadders() { return ladders; }
+    public int getSize() {
+        return SIZE;
+    }
+
+    public List<Ladder> getLadders() {
+        return ladders;
+    }
 
     public Ladder getLadderAt(int position) {
         for (Ladder ladder : ladders) {
@@ -115,13 +116,7 @@ class Board {
         return null;
     }
 
-    // Get posisi dalam path ular
-    public Point getSnakePosition(int position) {
-        if (position < 1 || position > SIZE) return new Point(0, 0);
-        return snakePath.get(position - 1);
-    }
-
-    public List<Point> getSnakePath() {
-        return snakePath;
+    public Point getGridPosition(int position) {
+        return positionMap.getOrDefault(position, new Point(0, 0));
     }
 }

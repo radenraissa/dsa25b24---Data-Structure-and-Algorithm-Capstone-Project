@@ -8,12 +8,14 @@ import java.util.List;
 class BoardPanel extends JPanel {
     private Board board;
     private List<Player> players;
+    private static final int CELL_SIZE = 60;
+    private static final int BOARD_SIZE = 10;
 
     public BoardPanel(Board board) {
         this.board = board;
         this.players = new ArrayList<>();
-        setPreferredSize(new Dimension(600, 600));
-        setBackground(new Color(240, 248, 255)); // Alice Blue background
+        setPreferredSize(new Dimension(CELL_SIZE * BOARD_SIZE, CELL_SIZE * BOARD_SIZE));
+        setBackground(new Color(88, 141, 60));
     }
 
     public void setPlayers(List<Player> players) {
@@ -27,183 +29,134 @@ class BoardPanel extends JPanel {
         Graphics2D g2d = (Graphics2D) g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        drawSnakePath(g2d);
-        drawPositionCircles(g2d);
+        drawBoard(g2d);
         drawLadders(g2d);
         drawPlayers(g2d);
     }
 
-    // Menggambar jalur ular sebagai garis tebal berkelok-kelok
-    private void drawSnakePath(Graphics2D g2d) {
-        List<Point> path = board.getSnakePath();
+    private void drawBoard(Graphics2D g2d) {
+        // Gambar grid sesuai posisi dari peta layout
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                int x = col * CELL_SIZE;
+                int y = row * CELL_SIZE;
 
-        // Gambar shadow untuk efek 3D
-        g2d.setColor(new Color(0, 0, 0, 30));
-        g2d.setStroke(new BasicStroke(28));
-        for (int i = 0; i < path.size() - 1; i++) {
-            Point p1 = path.get(i);
-            Point p2 = path.get(i + 1);
-            g2d.drawLine(p1.x + 3, p1.y + 3, p2.x + 3, p2.y + 3);
-        }
+                // Warna checkerboard
+                if ((row + col) % 2 == 0) {
+                    g2d.setColor(new Color(170, 215, 81));
+                } else {
+                    g2d.setColor(new Color(120, 170, 50));
+                }
 
-        // Gambar jalur ular dengan gradient
-        for (int i = 0; i < path.size() - 1; i++) {
-            Point p1 = path.get(i);
-            Point p2 = path.get(i + 1);
+                g2d.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+                g2d.setColor(new Color(88, 141, 60));
+                g2d.drawRect(x, y, CELL_SIZE, CELL_SIZE);
 
-            // Gradient dari pink ke biru
-            float ratio = (float) i / path.size();
-            Color color1 = new Color(255, 182, 193); // Pink
-            Color color2 = new Color(173, 216, 230); // Light blue
+                int position = getPositionFromGrid(row, col);
 
-            int r = (int) (color1.getRed() + ratio * (color2.getRed() - color1.getRed()));
-            int gb = (int) (color1.getGreen() + ratio * (color2.getGreen() - color1.getGreen()));
-            int b = (int) (color1.getBlue() + ratio * (color2.getBlue() - color1.getBlue()));
-
-            g2d.setColor(new Color(r, gb, b));
-            g2d.setStroke(new BasicStroke(25));
-            g2d.drawLine(p1.x, p1.y, p2.x, p2.y);
-        }
-    }
-
-    // Menggambar lingkaran di setiap posisi dengan nomor
-    private void drawPositionCircles(Graphics2D g2d) {
-        List<Point> path = board.getSnakePath();
-
-        for (int i = 0; i < path.size(); i++) {
-            Point p = path.get(i);
-            int position = i + 1;
-
-            // Warna berbeda untuk START dan FINISH
-            if (position == 1) {
-                // START - kuning dengan bintang
-                g2d.setColor(new Color(255, 223, 0));
-                g2d.fillOval(p.x - 20, p.y - 20, 40, 40);
-                g2d.setColor(new Color(255, 165, 0));
-                g2d.setStroke(new BasicStroke(3));
-                g2d.drawOval(p.x - 20, p.y - 20, 40, 40);
-
-                g2d.setColor(Color.BLACK);
-                g2d.setFont(new Font("Arial", Font.BOLD, 10));
-                g2d.drawString("START", p.x - 18, p.y + 5);
-            } else if (position == board.getSize()) {
-                // FINISH - hijau dengan mahkota
-                g2d.setColor(new Color(46, 204, 113));
-                g2d.fillOval(p.x - 20, p.y - 20, 40, 40);
-                g2d.setColor(new Color(39, 174, 96));
-                g2d.setStroke(new BasicStroke(3));
-                g2d.drawOval(p.x - 20, p.y - 20, 40, 40);
-
+                // Tampilkan posisi
                 g2d.setColor(Color.WHITE);
-                g2d.setFont(new Font("Arial", Font.BOLD, 9));
-                g2d.drawString("FINISH", p.x - 18, p.y + 5);
-            } else {
-                // Posisi biasa - putih dengan nomor
-                g2d.setColor(Color.WHITE);
-                g2d.fillOval(p.x - 12, p.y - 12, 24, 24);
-                g2d.setColor(new Color(100, 100, 100));
-                g2d.setStroke(new BasicStroke(2));
-                g2d.drawOval(p.x - 12, p.y - 12, 24, 24);
+                g2d.setFont(new Font("Arial", Font.BOLD, 14));
+                String posStr = String.valueOf(position);
+                g2d.drawString(posStr, x + 5, y + 15);
 
-                // Nomor posisi
-                g2d.setColor(new Color(50, 50, 50));
-                g2d.setFont(new Font("Arial", Font.BOLD, 10));
-                String numStr = String.valueOf(position);
-                FontMetrics fm = g2d.getFontMetrics();
-                int textWidth = fm.stringWidth(numStr);
-                g2d.drawString(numStr, p.x - textWidth / 2, p.y + 4);
+                // Highlight start dan finish
+                if (position == 1) {
+                    g2d.setColor(new Color(46, 204, 113, 100));
+                    g2d.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+                    g2d.setColor(Color.WHITE);
+                    g2d.setFont(new Font("Arial", Font.BOLD, 12));
+                    g2d.drawString("START", x + 8, y + 40);
+                } else if (position == 100) {
+                    g2d.setColor(new Color(241, 196, 15, 100));
+                    g2d.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+                    g2d.setColor(Color.WHITE);
+                    g2d.setFont(new Font("Arial", Font.BOLD, 12));
+                    g2d.drawString("FINISH", x + 8, y + 40);
+                }
             }
         }
     }
 
-    // Menggambar arrow hijau shortcuts
+    private int getPositionFromGrid(int row, int col) {
+        // Hitung posisi berdasarkan layout khusus
+        int rowFromBottom = 9 - row;
+        int position;
+
+        // Jika baris genap dari bawah (0,2,4,...), posisi berjalan dari kiri ke kanan
+        if (rowFromBottom % 2 == 0) {
+            position = rowFromBottom * 10 + col + 1;
+        } else {
+            // Jika ganjil dari bawah, posisi berjalan dari kanan ke kiri
+            position = rowFromBottom * 10 + (10 - col);
+        }
+        return position;
+    }
+
     private void drawLadders(Graphics2D g2d) {
         for (Ladder ladder : board.getLadders()) {
-            Point p1 = board.getSnakePosition(ladder.getBottom());
-            Point p2 = board.getSnakePosition(ladder.getTop());
+            Point bottomPos = board.getGridPosition(ladder.getBottom());
+            Point topPos = board.getGridPosition(ladder.getTop());
 
-            // Shadow
-            g2d.setColor(new Color(0, 0, 0, 50));
-            g2d.setStroke(new BasicStroke(10));
-            g2d.drawLine(p1.x + 2, p1.y + 2, p2.x + 2, p2.y + 2);
+            int x1 = bottomPos.x * CELL_SIZE + CELL_SIZE / 2;
+            int y1 = bottomPos.y * CELL_SIZE + CELL_SIZE / 2;
+            int x2 = topPos.x * CELL_SIZE + CELL_SIZE / 2;
+            int y2 = topPos.y * CELL_SIZE + CELL_SIZE / 2;
 
-            // Arrow hijau
-            g2d.setColor(new Color(46, 204, 113));
-            g2d.setStroke(new BasicStroke(8));
-            g2d.drawLine(p1.x, p1.y, p2.x, p2.y);
+            g2d.setColor(new Color(205, 133, 63));
+            g2d.setStroke(new BasicStroke(6));
+            g2d.drawLine(x1, y1, x2, y2);
 
-            // Kepala panah
-            drawArrowHead(g2d, p1.x, p1.y, p2.x, p2.y);
+            // Rungs
+            double distance = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+            int numRungs = (int)(distance / 15);
+            g2d.setStroke(new BasicStroke(4));
+            for (int i = 0; i <= numRungs; i++) {
+                double t = (double) i / numRungs;
+                int rx = (int)(x1 + t * (x2 - x1));
+                int ry = (int)(y1 + t * (y2 - y1));
+                g2d.drawLine(rx - 8, ry, rx + 8, ry);
+            }
         }
     }
 
-    private void drawArrowHead(Graphics2D g2d, int x1, int y1, int x2, int y2) {
-        double angle = Math.atan2(y2 - y1, x2 - x1);
-        int arrowLength = 18;
-
-        int[] xPoints = new int[3];
-        int[] yPoints = new int[3];
-
-        xPoints[0] = x2;
-        yPoints[0] = y2;
-
-        xPoints[1] = (int) (x2 - arrowLength * Math.cos(angle - Math.PI / 6));
-        yPoints[1] = (int) (y2 - arrowLength * Math.sin(angle - Math.PI / 6));
-
-        xPoints[2] = (int) (x2 - arrowLength * Math.cos(angle + Math.PI / 6));
-        yPoints[2] = (int) (y2 - arrowLength * Math.sin(angle + Math.PI / 6));
-
-        g2d.fillPolygon(xPoints, yPoints, 3);
-    }
-
-    // Menggambar pion pemain
     private void drawPlayers(Graphics2D g2d) {
-        Map<Integer, List<Player>> playersByPosition = new HashMap<>();
-
-        for (Player player : players) {
-            int pos = player.getPosition();
-            playersByPosition.putIfAbsent(pos, new ArrayList<>());
-            playersByPosition.get(pos).add(player);
+        Map<Integer, List<Player>> playersByPos = new HashMap<>();
+        for (Player p : players) {
+            playersByPos.putIfAbsent(p.getPosition(), new ArrayList<>());
+            playersByPos.get(p.getPosition()).add(p);
         }
 
-        for (Map.Entry<Integer, List<Player>> entry : playersByPosition.entrySet()) {
-            int position = entry.getKey();
-            List<Player> playersAtPos = entry.getValue();
+        for (Map.Entry<Integer, List<Player>> entry : playersByPos.entrySet()) {
+            int pos = entry.getKey();
+            List<Player> plist = entry.getValue();
+            Point gridPos = board.getGridPosition(pos);
+            int baseX = gridPos.x * CELL_SIZE + CELL_SIZE / 2;
+            int baseY = gridPos.y * CELL_SIZE + CELL_SIZE / 2;
 
-            Point pos = board.getSnakePosition(position);
-
-            int numPlayers = playersAtPos.size();
-            for (int i = 0; i < numPlayers; i++) {
-                Player player = playersAtPos.get(i);
-
+            int count = plist.size();
+            for (int i = 0; i < count; i++) {
+                Player p = plist.get(i);
                 int offsetX = 0, offsetY = 0;
-                if (numPlayers > 1) {
-                    double angle = 2 * Math.PI * i / numPlayers;
-                    offsetX = (int) (20 * Math.cos(angle));
-                    offsetY = (int) (20 * Math.sin(angle));
+                if (count > 1) {
+                    double angle = 2 * Math.PI * i / count;
+                    offsetX = (int)(12 * Math.cos(angle));
+                    offsetY = (int)(12 * Math.sin(angle));
                 }
+                int px = baseX + offsetX;
+                int py = baseY + offsetY;
 
-                int px = pos.x + offsetX;
-                int py = pos.y + offsetY;
-
-                // Shadow
-                g2d.setColor(new Color(0, 0, 0, 80));
-                g2d.fillOval(px - 13, py - 11, 26, 26);
-
-                // Pion
-                g2d.setColor(player.getColor());
-                g2d.fillOval(px - 15, py - 15, 30, 30);
+                g2d.setColor(p.getColor());
+                g2d.fillOval(px - 12, py - 12, 24, 24);
                 g2d.setColor(Color.WHITE);
-                g2d.setStroke(new BasicStroke(3));
-                g2d.drawOval(px - 15, py - 15, 30, 30);
-
-                // Initial
+                g2d.setStroke(new BasicStroke(2));
+                g2d.drawOval(px - 12, py - 12, 24, 24);
                 g2d.setColor(Color.WHITE);
-                g2d.setFont(new Font("Arial", Font.BOLD, 14));
-                String initial = player.getName().substring(0, 1).toUpperCase();
+                g2d.setFont(new Font("Arial", Font.BOLD, 12));
+                String initial = p.getName().substring(0, 1).toUpperCase();
                 FontMetrics fm = g2d.getFontMetrics();
                 int textWidth = fm.stringWidth(initial);
-                g2d.drawString(initial, px - textWidth / 2, py + 5);
+                g2d.drawString(initial, px - textWidth / 2, py + 4);
             }
         }
     }
