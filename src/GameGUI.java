@@ -21,7 +21,7 @@ class GameGUI extends JFrame {
     private Timer animationTimer;
 
     public GameGUI() {
-        board = new Board();
+        board = new Board(); // Ini akan memuat Board dengan size 81
         turnManager = new TurnManager();
         movementManager = new MovementManager();
         dice = new Dice();
@@ -32,7 +32,7 @@ class GameGUI extends JFrame {
     }
 
     private void setupPlayers() {
-        String[] colors = {"Player 1 (Red)", "Player 2 (Blue)", "Player 3 (Green)", "Player 4 (Yellow)"};
+        String[] colors = {"Red", "Blue", "Green", "Yellow"};
         Color[] playerColors = {
                 new Color(231, 76, 60),
                 new Color(52, 152, 219),
@@ -40,31 +40,18 @@ class GameGUI extends JFrame {
                 new Color(241, 196, 15)
         };
 
-        String input = JOptionPane.showInputDialog(
-                this, "Enter number of players (2-4):", "Game Setup", JOptionPane.QUESTION_MESSAGE);
-
+        // Default 2 player biar cepat test
         int numPlayers = 2;
-        if (input != null && !input.trim().isEmpty()) {
-            try {
-                numPlayers = Integer.parseInt(input);
-                if (numPlayers < 2 || numPlayers > 4) numPlayers = 2;
-            } catch (NumberFormatException e) {
-                numPlayers = 2;
-            }
-        }
 
         for (int i = 0; i < numPlayers; i++) {
-            String name = JOptionPane.showInputDialog(
-                    this, "Enter name for " + colors[i] + ":", "Player " + (i+1), JOptionPane.QUESTION_MESSAGE);
-            if (name == null || name.trim().isEmpty()) {
-                name = "Player " + (i + 1);
-            }
+            // Nama default a, b, c...
+            String name = String.valueOf((char)('a' + i));
             turnManager.addPlayer(new Player(name, playerColors[i]));
         }
     }
 
     private void initGUI() {
-        setTitle("Ular Tangga Game - Snake Path Board");
+        setTitle("Modified Snake & Ladder - GUI Version");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout(10, 10));
         getContentPane().setBackground(new Color(48, 71, 186));
@@ -118,10 +105,9 @@ class GameGUI extends JFrame {
 
         pack();
         setLocationRelativeTo(null);
-        setResizable(false);
+        // setResizable(false); // Enable resize agar bisa menyesuaikan gambar
 
         log("Game started! " + turnManager.getCurrentPlayer().getName() + "'s turn.");
-        log("Total positions: " + board.getSize()); // Info jumlah kotak
     }
 
     private void rollDice() {
@@ -129,35 +115,97 @@ class GameGUI extends JFrame {
 
         rollButton.setEnabled(false);
         Player currentPlayer = turnManager.getCurrentPlayer();
+        int currentPos = currentPlayer.getPosition();
 
         dice.roll();
         dicePanel.setRolled(true);
 
-        int steps = calculateSteps();
-        log(currentPlayer.getName() + " rolled: " + dice.getColorString() + " " + dice.getNumber() +
-                " = " + (steps >= 0 ? "+" : "") + steps);
+        int steps = dice.getNumber();
+        boolean isGreen = (dice.getColor() == Dice.DiceColor.GREEN);
 
-        int currentPos = currentPlayer.getPosition();
-        int newPos = currentPos + steps;
+        String direction = isGreen ? "MAJU (Green)" : "MUNDUR (Red)";
+        log(currentPlayer.getName() + " rolled " + direction + ": " + steps);
 
-        if (newPos < 1) {
-            newPos = 1;
-            log("⚠ Cannot go below position 1!");
-        } else if (newPos > board.getSize()) {
-            log("⚠ Cannot exceed " + board.getSize() + "! Need exact landing.");
-            newPos = currentPos;
-        }
+        // ============================================================
+        // SKENARIO 1: DADU MERAH (MUNDUR)
+        // ============================================================
+        if (!isGreen) {
+            ArrayList<Integer> backwardPath = new ArrayList<>();
+            backwardPath.add(currentPos);
 
-        movementManager.buildMovementStack(currentPos, newPos);
+            for (int i = 0; i < steps; i++) {
+                int prevPos = currentPlayer.undoStep();
+                backwardPath.add(prevPos);
+                if (prevPos == 1) break;
+            }
 
-        if (movementManager.hasMovement()) {
+            movementManager.setPath(backwardPath);
             isAnimating = true;
-            infoLabel.setText("Moving...");
+            infoLabel.setText("Retracing steps...");
             animateMovement(currentPlayer);
-        } else {
-            log("No movement.");
-            finishTurn(currentPlayer);
+            return;
         }
+
+        // ============================================================
+        // SKENARIO 2: MAJU - POSISI PRIMA (DIJKSTRA AKTIF)
+        // ============================================================
+        boolean isPrime = isPrime(currentPos);
+
+        if (isGreen && isPrime) {
+            log("✨ POSISI PRIMA (" + currentPos + ")! Dijkstra Aktif! ✨");
+
+            DijkstraAlgorithm solver = new DijkstraAlgorithm(board);
+
+            // PERBAIKAN: Targetnya board.getSize() (81), bukan 100
+            ArrayList<Integer> fullPath = solver.getShortestPath(currentPos, board.getSize());
+
+            ArrayList<Integer> actualPath = new ArrayList<>();
+            actualPath.add(currentPos);
+
+            int stepsTaken = 0;
+            // Kita loop path hasil Dijkstra
+            for (int i = 1; i < fullPath.size(); i++) {
+                if (stepsTaken < steps) {
+                    int nextNode = fullPath.get(i);
+                    actualPath.add(nextNode);
+                    currentPlayer.recordStep(nextNode);
+                    stepsTaken++;
+                } else {
+                    break;
+                }
+            }
+
+            movementManager.setPath(actualPath);
+            isAnimating = true;
+            infoLabel.setText("Moving via Dijkstra...");
+            animateMovement(currentPlayer);
+            return;
+        }
+
+        // ============================================================
+        // SKENARIO 3: MAJU BIASA (NON-PRIMA)
+        // ============================================================
+        ArrayList<Integer> normalPath = new ArrayList<>();
+        normalPath.add(currentPos);
+
+        int tempPos = currentPos;
+        for (int i = 0; i < steps; i++) {
+            tempPos++;
+
+            // PERBAIKAN: Mentok di board.getSize() (81)
+            if (tempPos > board.getSize()) {
+                tempPos--;
+                break;
+            }
+
+            normalPath.add(tempPos);
+            currentPlayer.recordStep(tempPos);
+        }
+
+        movementManager.setPath(normalPath);
+        isAnimating = true;
+        infoLabel.setText("Moving...");
+        animateMovement(currentPlayer);
     }
 
     private void animateMovement(Player player) {
@@ -180,18 +228,9 @@ class GameGUI extends JFrame {
     }
 
     private void finishTurn(Player player) {
-        int currentPos = player.getPosition();
-
-        Ladder ladder = board.getLadderAt(currentPos);
-        if (ladder != null) {
-            int newPos = ladder.getTop();
-            player.setPosition(newPos);
-            boardPanel.repaint();
-            log("🪜 " + player.getName() + " naik tangga ke posisi " + newPos + "!");
-        }
-
         log(player.getName() + " is now at position " + player.getPosition());
 
+        // PERBAIKAN: Cek kemenangan di board.getSize() (81)
         if (player.getPosition() == board.getSize()) {
             log("🎉 " + player.getName() + " WINS! 🎉");
             JOptionPane.showMessageDialog(this,
@@ -209,14 +248,12 @@ class GameGUI extends JFrame {
         log("---");
     }
 
-    private int calculateSteps() {
-        int steps = 0;
-        if (dice.getColor() == Dice.DiceColor.GREEN) {
-            steps = dice.getNumber();
-        } else {
-            steps = -dice.getNumber();
+    static boolean isPrime(int n) {
+        if (n <= 1) return false;
+        for (int i = 2; i < n; i++) {
+            if (n % i == 0) return false;
         }
-        return steps;
+        return true;
     }
 
     private void log(String message) {

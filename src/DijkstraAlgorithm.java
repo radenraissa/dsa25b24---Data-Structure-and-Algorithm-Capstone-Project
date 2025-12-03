@@ -3,10 +3,12 @@ import java.util.*;
 public class DijkstraAlgorithm {
     private int[][] adjMatrix;
     private int size;
-    private static final int BOARD_SIZE = 101;
+
+    // HAPUS static final BOARD_SIZE yang lama
 
     public DijkstraAlgorithm(Board board) {
-        this.size = BOARD_SIZE;
+        // PERUBAHAN: Ambil ukuran dinamis dari Board
+        this.size = board.getSize() + 1;
         this.adjMatrix = new int[size][size];
 
         for (int i = 0; i < size; i++) {
@@ -16,17 +18,23 @@ public class DijkstraAlgorithm {
         }
 
         // 2. Edge Biasa (Jalan 1 langkah)
-        for (int i = 1; i < 100; i++) adjMatrix[i][i+1] = 1;
+        for (int i = 1; i < size - 1; i++) {
+            adjMatrix[i][i+1] = 1;
+        }
 
         // 3. Edge Tangga (Jalan pintas, bobot 1)
         for (Ladder l : board.getLadders()) {
-            adjMatrix[l.getBottom()][l.getTop()] = 1;
-            // Hapus jalan biasa jika ada tangga (memaksa lewat tangga)
-            adjMatrix[l.getBottom()][l.getBottom() + 1] = 0;
+            if (l.getBottom() < size && l.getTop() < size) {
+                adjMatrix[l.getBottom()][l.getTop()] = 1;
+                // Hapus jalan biasa jika ada tangga (memaksa lewat tangga)
+                if (l.getBottom() + 1 < size) {
+                    adjMatrix[l.getBottom()][l.getBottom() + 1] = 0;
+                }
+            }
         }
     }
 
-    // --- ALGORITMA
+    // --- ALGORITMA MANUAL (Tidak Berubah) ---
 
     private void route(int n, int from, int to, int[] prev, ArrayList<Integer> pathResult){
         if (n == from) {
