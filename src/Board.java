@@ -31,11 +31,12 @@ class Board {
     private void createLadders() {
         // Daftar Tangga (Sesuaikan dengan gambar board Anda jika perlu)
         // Pastikan angka 'Ke' (Top) tidak lebih dari 81
-        ladders.add(new Ladder(16, 25));
-        ladders.add(new Ladder(34, 67));
-        ladders.add(new Ladder(39, 79));
-        ladders.add(new Ladder(57, 75));   // Adjusted agar tidak lewat 81
-        ladders.add(new Ladder(72, 80));   // Adjusted agar tidak lewat 81
+        ladders.add(new Ladder(15, 18));
+        ladders.add(new Ladder(27, 31));
+        ladders.add(new Ladder(40, 47));
+        ladders.add(new Ladder(51, 54));
+        ladders.add(new Ladder(57, 60));   // Adjusted agar tidak lewat 81
+        ladders.add(new Ladder(64, 66));   // Adjusted agar tidak lewat 81
     }
 
     public BoardNode getNode(int position) {
