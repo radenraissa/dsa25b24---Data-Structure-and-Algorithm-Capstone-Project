@@ -1,12 +1,13 @@
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.util.*;
+import java.util.ArrayList;
 import java.util.List;
+import java.awt.Point;
 
 class Board {
     private BoardNode[] nodes;
-    private static final int SIZE = 100;
+
+    // PERUBAHAN UTAMA: UBAH SIZE JADI 81
+    private static final int SIZE = 81;
+
     private List<Ladder> ladders;
 
     public Board() {
@@ -28,12 +29,13 @@ class Board {
     }
 
     private void createLadders() {
-        // 5 tangga sesuai klarifikasi - CORRECTED
-        ladders.add(new Ladder(16, 25));   // Tangga 1: 16 → 25
-        ladders.add(new Ladder(34, 67));   // Tangga 2: 34 → 67
-        ladders.add(new Ladder(39, 79));   // Tangga 3: 39 → 79
-        ladders.add(new Ladder(57, 86));   // Tangga 4: 57 → 86
-        ladders.add(new Ladder(72, 93));   // Tangga 5: 72 → 93
+        // Daftar Tangga (Sesuaikan dengan gambar board Anda jika perlu)
+        // Pastikan angka 'Ke' (Top) tidak lebih dari 81
+        ladders.add(new Ladder(16, 25));
+        ladders.add(new Ladder(34, 67));
+        ladders.add(new Ladder(39, 79));
+        ladders.add(new Ladder(57, 75));   // Adjusted agar tidak lewat 81
+        ladders.add(new Ladder(72, 80));   // Adjusted agar tidak lewat 81
     }
 
     public BoardNode getNode(int position) {
@@ -47,7 +49,7 @@ class Board {
 
     public List<Ladder> getLadders() { return ladders; }
 
-    // Check if position has ladder
+    // Check if position has ladder (Bottom logic)
     public Ladder getLadderAt(int position) {
         for (Ladder ladder : ladders) {
             if (ladder.getBottom() == position) {
@@ -57,18 +59,19 @@ class Board {
         return null;
     }
 
-    // Convert position to grid coordinates (row, col)
-    public Point getGridPosition(int position) {
-        if (position < 1 || position > 100) return new Point(0, 0);
-
-        int adjustedPos = position - 1;
-        int row = 9 - (adjustedPos / 10);
-        int col = adjustedPos % 10;
-
-        if ((9 - row) % 2 == 1) {
-            col = 9 - col;
+    // Check if position is top of ladder (Reverse logic)
+    public Ladder getLadderWithTopAt(int position) {
+        for (Ladder ladder : ladders) {
+            if (ladder.getTop() == position) {
+                return ladder;
+            }
         }
+        return null;
+    }
 
-        return new Point(col, row);
+    // Helper untuk grid logic (jika masih dipakai di tempat lain)
+    public Point getGridPosition(int position) {
+        if (position < 1 || position > SIZE) return new Point(0, 0);
+        return new Point(0, 0); // Dummy, karena sekarang pakai Mapping Manual di BoardPanel
     }
 }
