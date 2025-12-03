@@ -6,7 +6,7 @@ class Board {
     private BoardNode[] nodes;
 
     // PERUBAHAN UTAMA: UBAH SIZE JADI 81
-    private static final int SIZE = 81;
+    private static final int SIZE = 74;
 
     private List<Ladder> ladders;
 
