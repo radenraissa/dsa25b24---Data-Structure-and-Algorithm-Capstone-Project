@@ -4,7 +4,7 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
-import java.util.List; // Explicit import to avoid conflicts
+import java.util.List;
 
 class GameGUI extends JFrame {
     private Board board;
@@ -15,15 +15,16 @@ class GameGUI extends JFrame {
     private BoardPanel boardPanel;
     private DicePanel dicePanel;
     private JButton rollButton;
+    private JButton playAgainButton; // NEW
     private JLabel infoLabel;
     private JLabel turnLabel;
     private JTextArea logArea;
-
-    // NEW: Panel to display scores
     private JPanel scorePanel;
 
     private boolean isAnimating;
     private Timer animationTimer;
+
+    private int currentRound = 1;
 
     public GameGUI() {
         board = new Board();
@@ -54,7 +55,7 @@ class GameGUI extends JFrame {
     }
 
     private void initGUI() {
-        setTitle("Snake & Ladder Adventure - Score Edition");
+        setTitle("Snake & Ladder Adventure - Round " + currentRound);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
@@ -72,7 +73,7 @@ class GameGUI extends JFrame {
                 BorderFactory.createMatteBorder(0, 2, 0, 0, new Color(189, 195, 199)),
                 BorderFactory.createEmptyBorder(20, 20, 20, 20)
         ));
-        rightPanel.setPreferredSize(new Dimension(300, 0)); // Slightly wider
+        rightPanel.setPreferredSize(new Dimension(300, 0));
 
         // 1. TURN LABEL
         turnLabel = new JLabel("Turn: " + turnManager.getCurrentPlayer().getName());
@@ -82,7 +83,7 @@ class GameGUI extends JFrame {
         rightPanel.add(turnLabel);
         rightPanel.add(Box.createVerticalStrut(20));
 
-        // 2. NEW: SCOREBOARD PANEL
+        // 2. SCOREBOARD PANEL
         JLabel scoreTitle = new JLabel("🏆 SCOREBOARD");
         scoreTitle.setFont(new Font("Segoe UI", Font.BOLD, 14));
         scoreTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -94,9 +95,9 @@ class GameGUI extends JFrame {
         scorePanel.setBackground(Color.WHITE);
         scorePanel.setBorder(BorderFactory.createLineBorder(new Color(200,200,200), 1));
         scorePanel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        scorePanel.setMaximumSize(new Dimension(280, 80)); // Limit height
+        scorePanel.setMaximumSize(new Dimension(280, 80));
 
-        updateScoreBoard(); // Initial render
+        updateScoreBoard();
         rightPanel.add(scorePanel);
         rightPanel.add(Box.createVerticalStrut(20));
 
@@ -108,7 +109,13 @@ class GameGUI extends JFrame {
         rightPanel.add(dicePanel);
         rightPanel.add(Box.createVerticalStrut(20));
 
-        // 4. ROLL BUTTON
+        // 4. BUTTONS PANEL
+        JPanel buttonContainer = new JPanel();
+        buttonContainer.setLayout(new BoxLayout(buttonContainer, BoxLayout.Y_AXIS));
+        buttonContainer.setBackground(new Color(245, 245, 245));
+        buttonContainer.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        // Roll Button
         rollButton = new JButton("ROLL DICE");
         rollButton.setFont(new Font("Segoe UI", Font.BOLD, 18));
         rollButton.setBackground(new Color(46, 204, 113));
@@ -118,7 +125,24 @@ class GameGUI extends JFrame {
         rollButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         rollButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         rollButton.addActionListener(e -> rollDice());
-        rightPanel.add(rollButton);
+        buttonContainer.add(rollButton);
+
+        // Play Again Button (Initially Hidden)
+        playAgainButton = new JButton("PLAY NEXT ROUND");
+        playAgainButton.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        playAgainButton.setBackground(new Color(52, 152, 219)); // Blue
+        playAgainButton.setForeground(Color.WHITE);
+        playAgainButton.setFocusPainted(false);
+        playAgainButton.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        playAgainButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        playAgainButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        playAgainButton.setVisible(false); // Hide initially
+        playAgainButton.addActionListener(e -> startNextRound());
+
+        buttonContainer.add(Box.createVerticalStrut(10));
+        buttonContainer.add(playAgainButton);
+
+        rightPanel.add(buttonContainer);
         rightPanel.add(Box.createVerticalStrut(15));
 
         // 5. INFO LABEL
@@ -150,7 +174,6 @@ class GameGUI extends JFrame {
         log("First turn: " + turnManager.getCurrentPlayer().getName());
     }
 
-    // Helper to refresh scoreboard UI
     private void updateScoreBoard() {
         scorePanel.removeAll();
         java.util.List<Player> players = turnManager.getAllPlayers();
@@ -173,6 +196,30 @@ class GameGUI extends JFrame {
         }
         scorePanel.revalidate();
         scorePanel.repaint();
+    }
+
+    // --- FIX: This method is now CLEAN and inside the class ---
+    private void startNextRound() {
+        currentRound++;
+        setTitle("Snake & Ladder Adventure - Round " + currentRound);
+
+        // 1. Reset Logic
+        java.util.List<Player> players = turnManager.getAllPlayers();
+
+        for (Player p : players) {
+            p.reset(); // This uses the method we added to Player.java
+        }
+
+        // 2. UI Reset
+        playAgainButton.setVisible(false);
+        rollButton.setVisible(true);
+        rollButton.setEnabled(true);
+        infoLabel.setText("Round " + currentRound + " Started!");
+        log("\n=== ROUND " + currentRound + " STARTED ===");
+        log("All players returned to Start.");
+
+        // 3. Repaint board
+        boardPanel.repaint();
     }
 
     private void rollDice() {
@@ -210,12 +257,14 @@ class GameGUI extends JFrame {
         }
 
         boolean isPrime = isPrime(currentPos);
+        int boardSize = board.getSize();
 
-        if (isGreen && isPrime) {
+        // Dijkstra Logic with Bounce Check
+        if (isGreen && isPrime && (currentPos + steps <= boardSize)) {
             log("✨ PRIME POSITION (" + currentPos + ")! Dijkstra activated!");
 
             DijkstraAlgorithm solver = new DijkstraAlgorithm(board);
-            ArrayList<Integer> fullPath = solver.getShortestPath(currentPos, board.getSize());
+            ArrayList<Integer> fullPath = solver.getShortestPath(currentPos, boardSize);
 
             ArrayList<Integer> actualPath = new ArrayList<>();
             actualPath.add(currentPos);
@@ -239,18 +288,33 @@ class GameGUI extends JFrame {
             return;
         }
 
+        // Normal Move with Bounce Back
         ArrayList<Integer> normalPath = new ArrayList<>();
         normalPath.add(currentPos);
 
         int tempPos = currentPos;
+        int moveDir = 1;
+
         for (int i = 0; i < steps; i++) {
-            tempPos++;
-            if (tempPos > board.getSize()) {
-                tempPos--;
-                break;
+            if (tempPos == boardSize) {
+                moveDir = -1;
             }
+            else if (tempPos == 1) {
+                moveDir = 1;
+            }
+
+            tempPos += moveDir;
             normalPath.add(tempPos);
-            currentPlayer.recordStep(tempPos);
+
+            if (moveDir == 1) {
+                currentPlayer.recordStep(tempPos);
+            } else {
+                currentPlayer.undoStep();
+            }
+        }
+
+        if (moveDir == -1) {
+            log("↩️ Overshot! Bouncing back.");
         }
 
         movementManager.setPath(normalPath);
@@ -281,32 +345,32 @@ class GameGUI extends JFrame {
     private void finishTurn(Player player) {
         int finalPos = player.getPosition();
 
-        // --- NEW: SCORE CHECKING LOGIC ---
+        // Score Logic
         int scoreEffect = board.getScoreEffect(finalPos);
         if (scoreEffect != 0) {
             player.addScore(scoreEffect);
             String sign = scoreEffect > 0 ? "+" : "";
-
-            // Visual notification in log
-            log("⭐ " + player.getName() + " landed on Special Node " + finalPos + "!");
-            log("   Score Update: " + sign + scoreEffect + " points");
-
-            // Update Scoreboard UI
+            log("⭐ Special Node " + finalPos + "! Score: " + sign + scoreEffect);
             updateScoreBoard();
         }
-        // ----------------------------------
 
         log(player.getName() + " landed on " + finalPos);
 
+        // WIN CONDITION
         if (finalPos == board.getSize()) {
-            log("🎉🎉🎉 " + player.getName() + " WINS! 🎉🎉🎉");
+            log("🎉🎉🎉 " + player.getName() + " WINS ROUND " + currentRound + "! 🎉🎉🎉");
+
             JOptionPane.showMessageDialog(this,
-                    "🎉 Congratulations!\n\n" +
-                            player.getName() + " wins the game!\n" +
-                            "Final Score: " + player.getScore() + "\n",
-                    "🏆 GAME OVER 🏆",
+                    "🎉 ROUND " + currentRound + " FINISHED!\n\n" +
+                            "Winner: " + player.getName() + "\n" +
+                            "Total Score: " + player.getScore() + "\n\n" +
+                            "Click 'PLAY NEXT ROUND' to continue.",
+                    "🏆 ROUND OVER 🏆",
                     JOptionPane.INFORMATION_MESSAGE);
-            rollButton.setEnabled(false);
+
+            rollButton.setVisible(false);
+            playAgainButton.setVisible(true);
+            infoLabel.setText("Round Over. Play Again?");
             return;
         }
 

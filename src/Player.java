@@ -5,18 +5,14 @@ class Player {
     private String name;
     private int position;
     private Color color;
-
-    // NEW: Score variable
-    private int score;
-
+    private int score; // Score persists
     private Stack<Integer> history;
 
     public Player(String name, Color color) {
         this.name = name;
         this.position = 1;
         this.color = color;
-        this.score = 0; // Start with 0
-
+        this.score = 0;
         this.history = new Stack<>();
         this.history.push(1);
     }
@@ -25,7 +21,6 @@ class Player {
     public int getPosition() { return position; }
     public Color getColor() { return color; }
 
-    // NEW: Getter and Adder for Score
     public int getScore() { return score; }
 
     public void addScore(int points) {
@@ -50,5 +45,12 @@ class Player {
 
     public int peekHistory() {
         return history.isEmpty() ? 1 : history.peek();
+    }
+
+    // --- NEW RESET METHOD ---
+    public void reset() {
+        this.position = 1;       // Back to Start
+        this.history.clear();    // Wipe movement history
+        this.history.push(1);    // Initialize history at Start
     }
 }
