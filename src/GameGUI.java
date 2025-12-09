@@ -1,8 +1,10 @@
 import javax.swing.*;
 import javax.swing.Timer;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
+import java.util.List; // Explicit import to avoid conflicts
 
 class GameGUI extends JFrame {
     private Board board;
@@ -17,11 +19,14 @@ class GameGUI extends JFrame {
     private JLabel turnLabel;
     private JTextArea logArea;
 
+    // NEW: Panel to display scores
+    private JPanel scorePanel;
+
     private boolean isAnimating;
     private Timer animationTimer;
 
     public GameGUI() {
-        board = new Board(); // Board dengan 74 nodes
+        board = new Board();
         turnManager = new TurnManager();
         movementManager = new MovementManager();
         dice = new Dice();
@@ -29,23 +34,17 @@ class GameGUI extends JFrame {
 
         setupPlayers();
         initGUI();
-
-        System.out.println("\n🎮 Game initialized!");
-        System.out.println("   Board size: " + board.getSize() + " nodes");
-        System.out.println("   Players: " + turnManager.getAllPlayers().size());
-        System.out.println("   Ready to play!\n");
     }
 
     private void setupPlayers() {
         String[] playerNames = {"Red", "Blue", "Green", "Yellow"};
         Color[] playerColors = {
-                new Color(231, 76, 60),   // Red
-                new Color(52, 152, 219),   // Blue
-                new Color(46, 204, 113),   // Green
-                new Color(241, 196, 15)    // Yellow
+                new Color(231, 76, 60),
+                new Color(52, 152, 219),
+                new Color(46, 204, 113),
+                new Color(241, 196, 15)
         };
 
-        // Default 2 players
         int numPlayers = 2;
 
         for (int i = 0; i < numPlayers; i++) {
@@ -55,51 +54,64 @@ class GameGUI extends JFrame {
     }
 
     private void initGUI() {
-        setTitle("Snake & Ladder Adventure");
+        setTitle("Snake & Ladder Adventure - Score Edition");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new BorderLayout()); // Hapus gap default
+        setLayout(new BorderLayout());
 
-        // Ganti background utama jadi warna langit cerah biar senada
         getContentPane().setBackground(new Color(135, 206, 235));
 
-        // Board panel
         boardPanel = new BoardPanel(board);
         boardPanel.setPlayers(turnManager.getAllPlayers());
         add(boardPanel, BorderLayout.CENTER);
 
-        // --- PANEL KANAN (UI) YANG LEBIH CANTIK ---
+        // --- RIGHT PANEL UI ---
         JPanel rightPanel = new JPanel();
         rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
-        // Warna Background Panel: Putih Tulang Semi-Transparan
-        // Ini biar terlihat modern dan bersih
         rightPanel.setBackground(new Color(245, 245, 245));
         rightPanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 2, 0, 0, new Color(189, 195, 199)), // Garis pemisah
-                BorderFactory.createEmptyBorder(20, 20, 20, 20) // Padding dalam
+                BorderFactory.createMatteBorder(0, 2, 0, 0, new Color(189, 195, 199)),
+                BorderFactory.createEmptyBorder(20, 20, 20, 20)
         ));
-        rightPanel.setPreferredSize(new Dimension(280, 0)); // Lebarkan dikit
+        rightPanel.setPreferredSize(new Dimension(300, 0)); // Slightly wider
 
-        // 1. JUDUL GILIRAN
+        // 1. TURN LABEL
         turnLabel = new JLabel("Turn: " + turnManager.getCurrentPlayer().getName());
         turnLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        turnLabel.setForeground(new Color(44, 62, 80)); // Warna Font Gelap Elegan
+        turnLabel.setForeground(new Color(44, 62, 80));
         turnLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         rightPanel.add(turnLabel);
-        rightPanel.add(Box.createVerticalStrut(30));
+        rightPanel.add(Box.createVerticalStrut(20));
 
-        // 2. DADU PANEL (Perlu update DicePanel agar backgroundnya nyatu, lihat bawah)
+        // 2. NEW: SCOREBOARD PANEL
+        JLabel scoreTitle = new JLabel("🏆 SCOREBOARD");
+        scoreTitle.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        scoreTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
+        rightPanel.add(scoreTitle);
+        rightPanel.add(Box.createVerticalStrut(5));
+
+        scorePanel = new JPanel();
+        scorePanel.setLayout(new BoxLayout(scorePanel, BoxLayout.Y_AXIS));
+        scorePanel.setBackground(Color.WHITE);
+        scorePanel.setBorder(BorderFactory.createLineBorder(new Color(200,200,200), 1));
+        scorePanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        scorePanel.setMaximumSize(new Dimension(280, 80)); // Limit height
+
+        updateScoreBoard(); // Initial render
+        rightPanel.add(scorePanel);
+        rightPanel.add(Box.createVerticalStrut(20));
+
+        // 3. DICE PANEL
         dicePanel = new DicePanel(dice);
-        // Buat background dice panel transparan agar nyatu dengan rightPanel
         dicePanel.setBackground(new Color(0,0,0,0));
         dicePanel.setOpaque(false);
         dicePanel.setAlignmentX(Component.CENTER_ALIGNMENT);
         rightPanel.add(dicePanel);
-        rightPanel.add(Box.createVerticalStrut(30));
+        rightPanel.add(Box.createVerticalStrut(20));
 
-        // 3. TOMBOL ROLL (Gaya Modern Flat)
+        // 4. ROLL BUTTON
         rollButton = new JButton("ROLL DICE");
         rollButton.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        rollButton.setBackground(new Color(46, 204, 113)); // Hijau tombol start
+        rollButton.setBackground(new Color(46, 204, 113));
         rollButton.setForeground(Color.WHITE);
         rollButton.setFocusPainted(false);
         rollButton.setBorder(BorderFactory.createEmptyBorder(10, 30, 10, 30));
@@ -107,24 +119,23 @@ class GameGUI extends JFrame {
         rollButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         rollButton.addActionListener(e -> rollDice());
         rightPanel.add(rollButton);
-        rightPanel.add(Box.createVerticalStrut(20));
+        rightPanel.add(Box.createVerticalStrut(15));
 
-        // 4. INFO LABEL
+        // 5. INFO LABEL
         infoLabel = new JLabel("Click Roll to Start");
         infoLabel.setFont(new Font("Segoe UI", Font.ITALIC, 14));
         infoLabel.setForeground(Color.DARK_GRAY);
         infoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         rightPanel.add(infoLabel);
-        rightPanel.add(Box.createVerticalStrut(20));
+        rightPanel.add(Box.createVerticalStrut(15));
 
-        // 5. LOG AREA (Lebih bersih)
+        // 6. LOG AREA
         logArea = new JTextArea(15, 20);
         logArea.setEditable(false);
         logArea.setFont(new Font("Consolas", Font.PLAIN, 12));
-        logArea.setBackground(Color.WHITE); // Putih bersih
+        logArea.setBackground(Color.WHITE);
         logArea.setForeground(new Color(50, 50, 50));
 
-        // Tambah border halus ke log area
         JScrollPane scrollPane = new JScrollPane(logArea);
         scrollPane.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
         scrollPane.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -137,6 +148,31 @@ class GameGUI extends JFrame {
 
         log("🎮 Game started!");
         log("First turn: " + turnManager.getCurrentPlayer().getName());
+    }
+
+    // Helper to refresh scoreboard UI
+    private void updateScoreBoard() {
+        scorePanel.removeAll();
+        java.util.List<Player> players = turnManager.getAllPlayers();
+
+        for (Player p : players) {
+            JPanel pRow = new JPanel(new BorderLayout());
+            pRow.setBackground(Color.WHITE);
+            pRow.setBorder(new EmptyBorder(5, 10, 5, 10));
+
+            JLabel nameLbl = new JLabel("Player " + p.getName());
+            nameLbl.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+            nameLbl.setForeground(p.getColor().darker());
+
+            JLabel scoreLbl = new JLabel(String.valueOf(p.getScore()) + " pts");
+            scoreLbl.setFont(new Font("Segoe UI", Font.BOLD, 14));
+
+            pRow.add(nameLbl, BorderLayout.WEST);
+            pRow.add(scoreLbl, BorderLayout.EAST);
+            scorePanel.add(pRow);
+        }
+        scorePanel.revalidate();
+        scorePanel.repaint();
     }
 
     private void rollDice() {
@@ -156,7 +192,6 @@ class GameGUI extends JFrame {
         String colorName = isGreen ? "GREEN" : "RED";
         log(currentPlayer.getName() + " rolled " + colorName + " " + steps + " - " + direction);
 
-        // RED DICE - Mundur dengan undo history
         if (!isGreen) {
             ArrayList<Integer> backwardPath = new ArrayList<>();
             backwardPath.add(currentPos);
@@ -174,7 +209,6 @@ class GameGUI extends JFrame {
             return;
         }
 
-        // GREEN DICE + PRIME POSITION - Dijkstra aktif
         boolean isPrime = isPrime(currentPos);
 
         if (isGreen && isPrime) {
@@ -205,19 +239,16 @@ class GameGUI extends JFrame {
             return;
         }
 
-        // GREEN DICE + NON-PRIME - Maju biasa
         ArrayList<Integer> normalPath = new ArrayList<>();
         normalPath.add(currentPos);
 
         int tempPos = currentPos;
         for (int i = 0; i < steps; i++) {
             tempPos++;
-
             if (tempPos > board.getSize()) {
                 tempPos--;
                 break;
             }
-
             normalPath.add(tempPos);
             currentPlayer.recordStep(tempPos);
         }
@@ -249,22 +280,36 @@ class GameGUI extends JFrame {
 
     private void finishTurn(Player player) {
         int finalPos = player.getPosition();
-        log(player.getName() + " landed on position " + finalPos);
 
-        // Check win condition
+        // --- NEW: SCORE CHECKING LOGIC ---
+        int scoreEffect = board.getScoreEffect(finalPos);
+        if (scoreEffect != 0) {
+            player.addScore(scoreEffect);
+            String sign = scoreEffect > 0 ? "+" : "";
+
+            // Visual notification in log
+            log("⭐ " + player.getName() + " landed on Special Node " + finalPos + "!");
+            log("   Score Update: " + sign + scoreEffect + " points");
+
+            // Update Scoreboard UI
+            updateScoreBoard();
+        }
+        // ----------------------------------
+
+        log(player.getName() + " landed on " + finalPos);
+
         if (finalPos == board.getSize()) {
             log("🎉🎉🎉 " + player.getName() + " WINS! 🎉🎉🎉");
             JOptionPane.showMessageDialog(this,
                     "🎉 Congratulations!\n\n" +
                             player.getName() + " wins the game!\n" +
-                            "Final position: " + board.getSize(),
+                            "Final Score: " + player.getScore() + "\n",
                     "🏆 GAME OVER 🏆",
                     JOptionPane.INFORMATION_MESSAGE);
             rollButton.setEnabled(false);
             return;
         }
 
-        // Next turn
         turnManager.nextTurn();
         Player nextPlayer = turnManager.getCurrentPlayer();
         turnLabel.setText("Turn: " + nextPlayer.getName());
@@ -273,12 +318,10 @@ class GameGUI extends JFrame {
         log("---");
     }
 
-    // Check if number is prime
     static boolean isPrime(int n) {
         if (n <= 1) return false;
         if (n == 2) return true;
         if (n % 2 == 0) return false;
-
         for (int i = 3; i * i <= n; i += 2) {
             if (n % i == 0) return false;
         }
