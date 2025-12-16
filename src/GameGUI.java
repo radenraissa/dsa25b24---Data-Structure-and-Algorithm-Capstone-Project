@@ -218,7 +218,7 @@ class GameGUI extends JFrame {
             ((Timer) e.getSource()).stop();
 
             // Setelah sound dadu selesai, tunggu 1 detik lagi
-            Timer delayTimer = new Timer(1000, ev -> {
+            Timer delayTimer = new Timer(10, ev -> {
                 ((Timer) ev.getSource()).stop();
                 infoLabel.setText("Moving...");
                 animateMovement(player);
