@@ -186,109 +186,117 @@ class GameGUI extends JFrame {
         Player currentPlayer = turnManager.getCurrentPlayer();
         int currentPos = currentPlayer.getPosition();
 
-        // 1. Roll Dice & Sound
+        // ✅ STEP 1: Roll dice
         dice.roll();
         dicePanel.setRolled(true);
         dicePanel.repaint();
+
+        // ✅ STEP 2: Play dice sound
         soundManager.playDice();
 
         int steps = dice.getNumber();
-        boolean isGreen = dice.getColor() == Dice.DiceColor.GREEN;
-        log(currentPlayer.getName() + " rolled " + (isGreen ? "GREEN" : "RED") + " " + steps);
+        boolean isGreen = (dice.getColor() == Dice.DiceColor.GREEN);
 
-        // 2. Tentukan Logic Pergerakan (Dijkstra vs Normal vs Mundur)
-        ArrayList<Integer> path = new ArrayList<>();
-        path.add(currentPos);
+        String direction = isGreen ? "FORWARD ⬆" : "BACKWARD ⬇";
+        String colorName = isGreen ? "GREEN" : "RED";
+        log(currentPlayer.getName() + " rolled " + colorName + " " + steps + " - " + direction);
+        infoLabel.setText("Rolling dice...");
 
-        int boardSize = board.getSize();
-
-        // --- SKENARIO 1: MUNDUR (MERAH) ---
-        if (!isGreen) {
-            for (int i = 0; i < steps; i++) {
-                int prev = currentPlayer.undoStep();
-                path.add(prev);
-                if (prev == 1) break;
-            }
-            infoLabel.setText("Moving backward...");
-        }
-        else {
-            // Cek Prima untuk Dijkstra
-            boolean isPrime = isPrime(currentPos);
-
-            // --- SKENARIO 2: DIJKSTRA (HIJAU + PRIMA + TIDAK OVERSHOOT) ---
-            // Kita pastikan tidak overshoot agar Dijkstra tidak error mencari path di luar batas
-            if (isPrime && (currentPos + steps <= boardSize)) {
-                log("✨ PRIME POSITION (" + currentPos + ")! Dijkstra activated!");
-
-                DijkstraAlgorithm solver = new DijkstraAlgorithm(board);
-                ArrayList<Integer> dijkstraPath = solver.getShortestPath(currentPos, boardSize);
-
-                // Ambil langkah sesuai jumlah dadu dari hasil path Dijkstra
-                // Index 0 adalah posisi saat ini
-                int stepsTaken = 0;
-                for (int i = 1; i < dijkstraPath.size(); i++) {
-                    if (stepsTaken < steps) {
-                        int nextNode = dijkstraPath.get(i);
-                        path.add(nextNode);
-                        currentPlayer.recordStep(nextNode);
-                        stepsTaken++;
-                    } else {
-                        break;
-                    }
-                }
-                infoLabel.setText("Moving via Dijkstra...");
-            }
-            // --- SKENARIO 3: NORMAL MAJU + PANTUL (BOUNCE) ---
-            else {
-                int tempPos = currentPos;
-                int moveDir = 1; // 1 = Maju, -1 = Mundur (Pantul)
-
-                for (int i = 0; i < steps; i++) {
-                    // Cek Tabrakan Dinding Finish
-                    if (tempPos == boardSize) {
-                        moveDir = -1; // Memantul
-                    } else if (tempPos == 1) {
-                        moveDir = 1;
-                    }
-
-                    tempPos += moveDir;
-                    path.add(tempPos);
-
-                    // Logic Memori: Kalau maju dicatat, kalau pantul (mundur) dihapus dari history
-                    if (moveDir == 1) {
-                        currentPlayer.recordStep(tempPos);
-                    } else {
-                        currentPlayer.undoStep();
-                    }
-                }
-
-                if (moveDir == -1) log("↩️ Overshot! Bouncing back.");
-                infoLabel.setText("Moving forward...");
-            }
-        }
-
-        // 3. Eksekusi Pergerakan dengan Delay Sound
+        // Calculate path based on dice color
+        ArrayList<Integer> path = calculatePath(currentPlayer, currentPos, steps, isGreen);
         movementManager.setPath(path);
         isAnimating = true;
 
-        // Tunggu sound dadu selesai sedikit, lalu jalan
+        // ✅ STEP 3: Wait for dice sound to finish + 1 second delay
         delayMovementStart(currentPlayer);
     }
 
-    private void delayMovementStart(Player player) {
-        long diceDuration = soundManager.getDiceDuration();
-        // Beri buffer sedikit agar tidak terlalu cepat
-        int delay = (int) Math.min(diceDuration, 1000);
+    // ✅ NEW METHOD: Calculate path based on game logic
+    private ArrayList<Integer> calculatePath(Player player, int currentPos, int steps, boolean isGreen) {
+        ArrayList<Integer> path = new ArrayList<>();
+        path.add(currentPos);
 
-        Timer startTimer = new Timer(delay, e -> {
+        if (!isGreen) {
+            // Backward movement
+            for (int i = 0; i < steps; i++) {
+                int prevPos = player.undoStep();
+                path.add(prevPos);
+                if (prevPos == 1) break;
+            }
+            return path;
+        }
+
+        // Green dice logic
+        boolean isPrime = isPrime(currentPos);
+        int boardSize = board.getSize();
+
+        // Dijkstra path for prime positions
+        if (isPrime && (currentPos + steps <= boardSize)) {
+            log("✨ PRIME POSITION (" + currentPos + ")! Dijkstra activated!");
+
+            DijkstraAlgorithm solver = new DijkstraAlgorithm(board);
+            ArrayList<Integer> fullPath = solver.getShortestPath(currentPos, boardSize);
+
+            int stepsTaken = 0;
+            for (int i = 1; i < fullPath.size() && stepsTaken < steps; i++) {
+                int nextNode = fullPath.get(i);
+                path.add(nextNode);
+                player.recordStep(nextNode);
+                stepsTaken++;
+            }
+            return path;
+        }
+
+        // Normal forward movement with bounce-back
+        int tempPos = currentPos;
+        int moveDir = 1;
+
+        for (int i = 0; i < steps; i++) {
+            if (tempPos == boardSize) {
+                moveDir = -1;
+            } else if (tempPos == 1) {
+                moveDir = 1;
+            }
+
+            tempPos += moveDir;
+            path.add(tempPos);
+
+            if (moveDir == 1) {
+                player.recordStep(tempPos);
+            } else {
+                player.undoStep();
+            }
+        }
+
+        if (moveDir == -1) {
+            log("↩ Overshot! Bouncing back.");
+        }
+
+        return path;
+    }
+
+    private void delayMovementStart(Player player) {
+        // Tunggu sampai sound dadu selesai
+        long diceDuration = soundManager.getDiceDuration();
+
+        Timer diceFinishTimer = new Timer((int)diceDuration, e -> {
             ((Timer) e.getSource()).stop();
-            animateMovement(player);
+
+            // Setelah sound dadu selesai, tunggu 1 detik lagi
+            Timer delayTimer = new Timer(10, ev -> {
+                ((Timer) ev.getSource()).stop();
+                infoLabel.setText("Moving...");
+                animateMovement(player);
+            });
+            delayTimer.setRepeats(false);
+            delayTimer.start();
         });
-        startTimer.setRepeats(false);
-        startTimer.start();
+        diceFinishTimer.setRepeats(false);
+        diceFinishTimer.start();
     }
 
     private void animateMovement(Player player) {
+        // Timer untuk setiap langkah dengan jeda 0.5 detik
         animationTimer = new Timer(500, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -297,9 +305,13 @@ class GameGUI extends JFrame {
                 if (next != null) {
                     player.setPosition(next);
                     boardPanel.repaint();
-                    soundManager.playMove(); // Sound langkah kaki
+
+                    // Putar sound move untuk setiap langkah
+                    soundManager.playMove();
                     infoLabel.setText("Position: " + next);
+
                 } else {
+                    // Animasi selesai
                     animationTimer.stop();
                     isAnimating = false;
                     finishTurn(player);
