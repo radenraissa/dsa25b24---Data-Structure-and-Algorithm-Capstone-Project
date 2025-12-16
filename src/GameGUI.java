@@ -17,7 +17,7 @@ class GameGUI extends JFrame {
     private DicePanel dicePanel;
     private JButton rollButton;
     private JButton playAgainButton;
-    private JButton statsButton; // NEW: Stats Button
+    private JButton statsButton;
 
     private JLabel infoLabel;
     private JLabel turnLabel;
@@ -29,31 +29,25 @@ class GameGUI extends JFrame {
     private int currentRound = 1;
 
     public GameGUI() {
-        // Initialize Game Logic
         board = new Board();
         turnManager = new TurnManager();
         movementManager = new MovementManager();
         dice = new Dice();
+        soundManager = new SoundManager();
         isAnimating = false;
 
-        // 1. Setup Players (Input Dialogs)
         setupPlayersInput();
-
-        // 2. Build UI
         initGUI();
     }
 
-    // --- NEW: DYNAMIC PLAYER SETUP ---
     private void setupPlayersInput() {
-        // Colors for up to 4 players
         Color[] playerColors = {
-                new Color(231, 76, 60),   // Red
-                new Color(52, 152, 219),  // Blue
-                new Color(46, 204, 113),  // Green
-                new Color(241, 196, 15)   // Yellow
+                new Color(231, 76, 60),
+                new Color(52, 152, 219),
+                new Color(46, 204, 113),
+                new Color(241, 196, 15)
         };
 
-        // 1. Ask Number of Players
         String[] options = {"2 Players", "3 Players", "4 Players"};
         int choice = JOptionPane.showOptionDialog(null,
                 "Select Number of Players:",
@@ -62,10 +56,9 @@ class GameGUI extends JFrame {
                 JOptionPane.QUESTION_MESSAGE,
                 null, options, options[0]);
 
-        int numPlayers = choice + 2; // Index 0 -> 2 players, etc.
-        if (choice == -1) System.exit(0); // Exit if closed
+        int numPlayers = choice + 2;
+        if (choice == -1) System.exit(0);
 
-        // 2. Ask Names
         for (int i = 0; i < numPlayers; i++) {
             String defaultName = "Player " + (i + 1);
             String name = JOptionPane.showInputDialog(null,
@@ -75,8 +68,6 @@ class GameGUI extends JFrame {
             if (name == null || name.trim().isEmpty()) {
                 name = defaultName;
             }
-
-            // Create Player
             turnManager.addPlayer(new Player(name, playerColors[i]));
         }
     }
@@ -85,14 +76,13 @@ class GameGUI extends JFrame {
         setTitle("Snake & Ladder Adventure - Round " + currentRound);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
-
         getContentPane().setBackground(new Color(135, 206, 235));
 
         boardPanel = new BoardPanel(board);
         boardPanel.setPlayers(turnManager.getAllPlayers());
         add(boardPanel, BorderLayout.CENTER);
 
-        // --- RIGHT PANEL UI ---
+        // --- PANEL KANAN ---
         JPanel rightPanel = new JPanel();
         rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
         rightPanel.setBackground(new Color(245, 245, 245));
@@ -105,34 +95,29 @@ class GameGUI extends JFrame {
         // Turn Label
         turnLabel = new JLabel("Turn: " + turnManager.getCurrentPlayer().getName());
         turnLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        turnLabel.setForeground(new Color(44, 62, 80));
         turnLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         rightPanel.add(turnLabel);
         rightPanel.add(Box.createVerticalStrut(20));
 
-        // Scoreboard
+        // Scoreboard Label
         JLabel scoreTitle = new JLabel("🏆 SCOREBOARD");
         scoreTitle.setFont(new Font("Segoe UI", Font.BOLD, 14));
         scoreTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
         rightPanel.add(scoreTitle);
         rightPanel.add(Box.createVerticalStrut(5));
 
+        // Score Panel Area
         scorePanel = new JPanel();
         scorePanel.setLayout(new BoxLayout(scorePanel, BoxLayout.Y_AXIS));
         scorePanel.setBackground(Color.WHITE);
-        scorePanel.setBorder(BorderFactory.createLineBorder(new Color(200,200,200), 1));
-        scorePanel.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-        // Flexible height based on player count
+        scorePanel.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
         scorePanel.setMaximumSize(new Dimension(280, 150));
-
         updateScoreBoard();
         rightPanel.add(scorePanel);
         rightPanel.add(Box.createVerticalStrut(20));
 
         // Dice Panel
         dicePanel = new DicePanel(dice);
-        dicePanel.setBackground(new Color(0,0,0,0));
         dicePanel.setOpaque(false);
         dicePanel.setAlignmentX(Component.CENTER_ALIGNMENT);
         rightPanel.add(dicePanel);
@@ -144,13 +129,11 @@ class GameGUI extends JFrame {
         buttonContainer.setBackground(new Color(245, 245, 245));
         buttonContainer.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Roll Button
         rollButton = new JButton("ROLL DICE");
         setupButtonStyle(rollButton, new Color(46, 204, 113));
         rollButton.addActionListener(e -> rollDice());
         buttonContainer.add(rollButton);
 
-        // Play Again Button (Hidden)
         playAgainButton = new JButton("PLAY NEXT ROUND");
         setupButtonStyle(playAgainButton, new Color(52, 152, 219));
         playAgainButton.setVisible(false);
@@ -158,9 +141,8 @@ class GameGUI extends JFrame {
         buttonContainer.add(Box.createVerticalStrut(10));
         buttonContainer.add(playAgainButton);
 
-        // NEW: Stats Button
         statsButton = new JButton("📊 VIEW STATS");
-        setupButtonStyle(statsButton, new Color(155, 89, 182)); // Purple
+        setupButtonStyle(statsButton, new Color(155, 89, 182));
         statsButton.addActionListener(e -> showStatistics());
         buttonContainer.add(Box.createVerticalStrut(10));
         buttonContainer.add(statsButton);
@@ -171,93 +153,30 @@ class GameGUI extends JFrame {
         // Info Label
         infoLabel = new JLabel("Click Roll to Start");
         infoLabel.setFont(new Font("Segoe UI", Font.ITALIC, 14));
-        infoLabel.setForeground(Color.DARK_GRAY);
         infoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         rightPanel.add(infoLabel);
-        rightPanel.add(Box.createVerticalStrut(15));
 
         // Log Area
         logArea = new JTextArea(15, 20);
         logArea.setEditable(false);
-        logArea.setFont(new Font("Consolas", Font.PLAIN, 12));
-        logArea.setBackground(Color.WHITE);
-        logArea.setForeground(new Color(50, 50, 50));
-
+        logArea.setFont(new Font("Consolas", Font.PLAIN, 11));
         JScrollPane scrollPane = new JScrollPane(logArea);
-        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
-        scrollPane.setAlignmentX(Component.CENTER_ALIGNMENT);
+        rightPanel.add(Box.createVerticalStrut(15));
         rightPanel.add(scrollPane);
 
         add(rightPanel, BorderLayout.EAST);
-
         pack();
         setLocationRelativeTo(null);
-
         log("🎮 Game started!");
-        log("Players: " + turnManager.getAllPlayers().size());
     }
 
-    // Helper to style buttons
     private void setupButtonStyle(JButton btn, Color bg) {
         btn.setFont(new Font("Segoe UI", Font.BOLD, 16));
         btn.setBackground(bg);
         btn.setForeground(Color.WHITE);
         btn.setFocusPainted(false);
-        btn.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.setAlignmentX(Component.CENTER_ALIGNMENT);
-        // Fix max width for alignment
         btn.setMaximumSize(new Dimension(220, 45));
-    }
-
-    // --- NEW: Show Stats Logic ---
-    private void showStatistics() {
-        String stats = GameStats.getTop3Stats(turnManager.getAllPlayers());
-        JOptionPane.showMessageDialog(this, stats, "🏆 Leaderboard", JOptionPane.INFORMATION_MESSAGE);
-    }
-
-    private void updateScoreBoard() {
-        scorePanel.removeAll();
-        java.util.List<Player> players = turnManager.getAllPlayers();
-
-        for (Player p : players) {
-            JPanel pRow = new JPanel(new BorderLayout());
-            pRow.setBackground(Color.WHITE);
-            pRow.setBorder(new EmptyBorder(5, 10, 5, 10));
-
-            JLabel nameLbl = new JLabel(p.getName());
-            nameLbl.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-            nameLbl.setForeground(p.getColor().darker());
-
-            // Show Score and Wins
-            JLabel scoreLbl = new JLabel(p.getScore() + " pts (" + p.getWins() + " W)");
-            scoreLbl.setFont(new Font("Segoe UI", Font.BOLD, 14));
-
-            pRow.add(nameLbl, BorderLayout.WEST);
-            pRow.add(scoreLbl, BorderLayout.EAST);
-            scorePanel.add(pRow);
-        }
-        scorePanel.revalidate();
-        scorePanel.repaint();
-    }
-
-    private void startNextRound() {
-        currentRound++;
-        setTitle("Snake & Ladder Adventure - Round " + currentRound);
-
-        java.util.List<Player> players = turnManager.getAllPlayers();
-        for (Player p : players) {
-            p.reset();
-        }
-
-        playAgainButton.setVisible(false);
-        rollButton.setVisible(true);
-        rollButton.setEnabled(true);
-        infoLabel.setText("Round " + currentRound + " Started!");
-        log("\n=== ROUND " + currentRound + " STARTED ===");
-        log("All players returned to Start.");
-
-        boardPanel.repaint();
+        btn.setAlignmentX(Component.CENTER_ALIGNMENT);
     }
 
     private void rollDice() {
@@ -267,107 +186,119 @@ class GameGUI extends JFrame {
         Player currentPlayer = turnManager.getCurrentPlayer();
         int currentPos = currentPlayer.getPosition();
 
+        // 1. Roll Dice & Sound
         dice.roll();
         dicePanel.setRolled(true);
+        dicePanel.repaint();
+        soundManager.playDice();
 
         int steps = dice.getNumber();
-        boolean isGreen = (dice.getColor() == Dice.DiceColor.GREEN);
+        boolean isGreen = dice.getColor() == Dice.DiceColor.GREEN;
+        log(currentPlayer.getName() + " rolled " + (isGreen ? "GREEN" : "RED") + " " + steps);
 
-        String direction = isGreen ? "FORWARD ⬆" : "BACKWARD ⬇";
-        String colorName = isGreen ? "GREEN" : "RED";
-        log(currentPlayer.getName() + " rolled " + colorName + " " + steps + " - " + direction);
+        // 2. Tentukan Logic Pergerakan (Dijkstra vs Normal vs Mundur)
+        ArrayList<Integer> path = new ArrayList<>();
+        path.add(currentPos);
 
-        if (!isGreen) {
-            ArrayList<Integer> backwardPath = new ArrayList<>();
-            backwardPath.add(currentPos);
-
-            for (int i = 0; i < steps; i++) {
-                int prevPos = currentPlayer.undoStep();
-                backwardPath.add(prevPos);
-                if (prevPos == 1) break;
-            }
-
-            movementManager.setPath(backwardPath);
-            isAnimating = true;
-            infoLabel.setText("Moving backward...");
-            animateMovement(currentPlayer);
-            return;
-        }
-
-        boolean isPrime = isPrime(currentPos);
         int boardSize = board.getSize();
 
-        if (isGreen && isPrime && (currentPos + steps <= boardSize)) {
-            log("✨ PRIME POSITION (" + currentPos + ")! Dijkstra activated!");
+        // --- SKENARIO 1: MUNDUR (MERAH) ---
+        if (!isGreen) {
+            for (int i = 0; i < steps; i++) {
+                int prev = currentPlayer.undoStep();
+                path.add(prev);
+                if (prev == 1) break;
+            }
+            infoLabel.setText("Moving backward...");
+        }
+        else {
+            // Cek Prima untuk Dijkstra
+            boolean isPrime = isPrime(currentPos);
 
-            DijkstraAlgorithm solver = new DijkstraAlgorithm(board);
-            ArrayList<Integer> fullPath = solver.getShortestPath(currentPos, boardSize);
+            // --- SKENARIO 2: DIJKSTRA (HIJAU + PRIMA + TIDAK OVERSHOOT) ---
+            // Kita pastikan tidak overshoot agar Dijkstra tidak error mencari path di luar batas
+            if (isPrime && (currentPos + steps <= boardSize)) {
+                log("✨ PRIME POSITION (" + currentPos + ")! Dijkstra activated!");
 
-            ArrayList<Integer> actualPath = new ArrayList<>();
-            actualPath.add(currentPos);
+                DijkstraAlgorithm solver = new DijkstraAlgorithm(board);
+                ArrayList<Integer> dijkstraPath = solver.getShortestPath(currentPos, boardSize);
 
-            int stepsTaken = 0;
-            for (int i = 1; i < fullPath.size(); i++) {
-                if (stepsTaken < steps) {
-                    int nextNode = fullPath.get(i);
-                    actualPath.add(nextNode);
-                    currentPlayer.recordStep(nextNode);
-                    stepsTaken++;
-                } else {
-                    break;
+                // Ambil langkah sesuai jumlah dadu dari hasil path Dijkstra
+                // Index 0 adalah posisi saat ini
+                int stepsTaken = 0;
+                for (int i = 1; i < dijkstraPath.size(); i++) {
+                    if (stepsTaken < steps) {
+                        int nextNode = dijkstraPath.get(i);
+                        path.add(nextNode);
+                        currentPlayer.recordStep(nextNode);
+                        stepsTaken++;
+                    } else {
+                        break;
+                    }
                 }
+                infoLabel.setText("Moving via Dijkstra...");
             }
+            // --- SKENARIO 3: NORMAL MAJU + PANTUL (BOUNCE) ---
+            else {
+                int tempPos = currentPos;
+                int moveDir = 1; // 1 = Maju, -1 = Mundur (Pantul)
 
-            movementManager.setPath(actualPath);
-            isAnimating = true;
-            infoLabel.setText("Moving via Dijkstra...");
-            animateMovement(currentPlayer);
-            return;
-        }
+                for (int i = 0; i < steps; i++) {
+                    // Cek Tabrakan Dinding Finish
+                    if (tempPos == boardSize) {
+                        moveDir = -1; // Memantul
+                    } else if (tempPos == 1) {
+                        moveDir = 1;
+                    }
 
-        ArrayList<Integer> normalPath = new ArrayList<>();
-        normalPath.add(currentPos);
+                    tempPos += moveDir;
+                    path.add(tempPos);
 
-        int tempPos = currentPos;
-        int moveDir = 1;
+                    // Logic Memori: Kalau maju dicatat, kalau pantul (mundur) dihapus dari history
+                    if (moveDir == 1) {
+                        currentPlayer.recordStep(tempPos);
+                    } else {
+                        currentPlayer.undoStep();
+                    }
+                }
 
-        for (int i = 0; i < steps; i++) {
-            if (tempPos == boardSize) {
-                moveDir = -1;
-            }
-            else if (tempPos == 1) {
-                moveDir = 1;
-            }
-
-            tempPos += moveDir;
-            normalPath.add(tempPos);
-
-            if (moveDir == 1) {
-                currentPlayer.recordStep(tempPos);
-            } else {
-                currentPlayer.undoStep();
+                if (moveDir == -1) log("↩️ Overshot! Bouncing back.");
+                infoLabel.setText("Moving forward...");
             }
         }
 
-        if (moveDir == -1) {
-            log("↩ Overshot! Bouncing back.");
-        }
-
-        movementManager.setPath(normalPath);
+        // 3. Eksekusi Pergerakan dengan Delay Sound
+        movementManager.setPath(path);
         isAnimating = true;
-        infoLabel.setText("Moving forward...");
-        animateMovement(currentPlayer);
+
+        // Tunggu sound dadu selesai sedikit, lalu jalan
+        delayMovementStart(currentPlayer);
+    }
+
+    private void delayMovementStart(Player player) {
+        long diceDuration = soundManager.getDiceDuration();
+        // Beri buffer sedikit agar tidak terlalu cepat
+        int delay = (int) Math.min(diceDuration, 1000);
+
+        Timer startTimer = new Timer(delay, e -> {
+            ((Timer) e.getSource()).stop();
+            animateMovement(player);
+        });
+        startTimer.setRepeats(false);
+        startTimer.start();
     }
 
     private void animateMovement(Player player) {
-        animationTimer = new Timer(300, new ActionListener() {
+        animationTimer = new Timer(500, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                Integer nextPos = movementManager.popNextPosition();
-                if (nextPos != null) {
-                    player.setPosition(nextPos);
+                Integer next = movementManager.popNextPosition();
+
+                if (next != null) {
+                    player.setPosition(next);
                     boardPanel.repaint();
-                    infoLabel.setText("Position: " + nextPos);
+                    soundManager.playMove(); // Sound langkah kaki
+                    infoLabel.setText("Position: " + next);
                 } else {
                     animationTimer.stop();
                     isAnimating = false;
@@ -381,49 +312,111 @@ class GameGUI extends JFrame {
     private void finishTurn(Player player) {
         int finalPos = player.getPosition();
 
+        // --- 1. LOGIKA SCORE (DIPULIHKAN) ---
         int scoreEffect = board.getScoreEffect(finalPos);
         if (scoreEffect != 0) {
             player.addScore(scoreEffect);
             String sign = scoreEffect > 0 ? "+" : "";
-            log("⭐ Special Node " + finalPos + "! Score: " + sign + scoreEffect);
+            log("⭐ Node " + finalPos + ": " + sign + scoreEffect + " pts");
+            // Sound efek score bisa ditambahkan di sini jika ada (misal playCoin())
             updateScoreBoard();
         }
 
-        log(player.getName() + " landed on " + finalPos);
-
+        // --- 2. LOGIKA MENANG ---
         if (finalPos == board.getSize()) {
-            // NEW: Add win count
+            soundManager.playVictory();
             player.addWin();
-            updateScoreBoard(); // Update UI to show new win count
-
-            log("🎉🎉🎉 " + player.getName() + " WINS ROUND " + currentRound + "! 🎉🎉🎉");
+            log("🎉 " + player.getName() + " WINS ROUND " + currentRound + "!");
+            updateScoreBoard();
 
             JOptionPane.showMessageDialog(this,
-                    "🎉 ROUND " + currentRound + " FINISHED!\n\n" +
+                    "🎉 CONGRATULATIONS!\n\n" +
                             "Winner: " + player.getName() + "\n" +
                             "Total Score: " + player.getScore() + "\n" +
-                            "Total Wins: " + player.getWins() + "\n\n" +
-                            "Click 'PLAY NEXT ROUND' to continue.",
-                    "🏆 ROUND OVER 🏆",
+                            "Total Wins: " + player.getWins(),
+                    "Victory!",
                     JOptionPane.INFORMATION_MESSAGE);
 
             rollButton.setVisible(false);
             playAgainButton.setVisible(true);
-            infoLabel.setText("Round Over. Play Again?");
+            infoLabel.setText("Round " + currentRound + " finished!");
 
-            // Show stats automatically at end of round? Optional.
-            // showStatistics();
+            // Tampilkan stats otomatis di akhir ronde
+            showStatistics();
             return;
         }
 
+        // --- 3. GANTI GILIRAN ---
         turnManager.nextTurn();
         Player nextPlayer = turnManager.getCurrentPlayer();
         turnLabel.setText("Turn: " + nextPlayer.getName());
         rollButton.setEnabled(true);
-        infoLabel.setText(" ");
+        infoLabel.setText(nextPlayer.getName() + "'s turn");
         log("---");
     }
 
+    private void startNextRound() {
+        currentRound++;
+        setTitle("Snake & Ladder Adventure - Round " + currentRound);
+
+        // Reset posisi (Score dan Wins TETAP ADA karena tidak di-reset di method reset() Player)
+        for (Player p : turnManager.getAllPlayers()) {
+            p.reset();
+        }
+
+        playAgainButton.setVisible(false);
+        rollButton.setVisible(true);
+        rollButton.setEnabled(true);
+        dicePanel.setRolled(false);
+        dicePanel.repaint();
+        boardPanel.repaint();
+
+        infoLabel.setText("Round " + currentRound + " started!");
+        log("\n🔄 Round " + currentRound + " started!");
+        updateScoreBoard();
+    }
+
+    private void showStatistics() {
+        // Menggunakan helper dari GameStats
+        JOptionPane.showMessageDialog(this,
+                GameStats.getTop3Stats(turnManager.getAllPlayers()),
+                "Leaderboard",
+                JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void updateScoreBoard() {
+        scorePanel.removeAll();
+
+        List<Player> players = turnManager.getAllPlayers();
+        // Sort sementara untuk display (berdasarkan score tertinggi)
+        // Kita copy list agar urutan giliran main (TurnManager) tidak berantakan
+        List<Player> displayList = new ArrayList<>(players);
+        displayList.sort((p1, p2) -> Integer.compare(p2.getScore(), p1.getScore()));
+
+        for (Player p : displayList) {
+            JPanel playerRow = new JPanel(new BorderLayout());
+            playerRow.setBackground(Color.WHITE);
+            playerRow.setBorder(new EmptyBorder(2, 5, 2, 5));
+            playerRow.setMaximumSize(new Dimension(260, 25));
+
+            JLabel nameLabel = new JLabel(p.getName());
+            nameLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            nameLabel.setForeground(p.getColor().darker());
+
+            // TAMPILKAN SCORE DAN WINS
+            JLabel statsLabel = new JLabel(p.getScore() + " pts | " + p.getWins() + " W");
+            statsLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+
+            playerRow.add(nameLabel, BorderLayout.WEST);
+            playerRow.add(statsLabel, BorderLayout.EAST);
+            scorePanel.add(playerRow);
+        }
+
+        scorePanel.revalidate();
+        scorePanel.repaint();
+    }
+
+    // Helper Prima
     static boolean isPrime(int n) {
         if (n <= 1) return false;
         if (n == 2) return true;
@@ -434,8 +427,8 @@ class GameGUI extends JFrame {
         return true;
     }
 
-    private void log(String message) {
-        logArea.append(message + "\n");
+    private void log(String msg) {
+        logArea.append(msg + "\n");
         logArea.setCaretPosition(logArea.getDocument().getLength());
     }
 }
