@@ -6,7 +6,7 @@ class Player {
     private int position;
     private Color color;
     private int score;
-    private int wins; // NEW: Track Wins
+    private int wins;
     private Stack<Integer> history;
 
     public Player(String name, Color color) {
@@ -14,7 +14,7 @@ class Player {
         this.position = 1;
         this.color = color;
         this.score = 0;
-        this.wins = 0; // Initialize wins
+        this.wins = 0;
         this.history = new Stack<>();
         this.history.push(1);
     }
@@ -26,7 +26,6 @@ class Player {
     public int getScore() { return score; }
     public void addScore(int points) { this.score += points; }
 
-    // NEW: Win getters and setters
     public int getWins() { return wins; }
     public void addWin() { this.wins++; }
 
@@ -52,7 +51,6 @@ class Player {
         this.history.push(1);
     }
 
-    // toString for debugging/display
     @Override
     public String toString() {
         return name + " (Score: " + score + " | Wins: " + wins + ")";

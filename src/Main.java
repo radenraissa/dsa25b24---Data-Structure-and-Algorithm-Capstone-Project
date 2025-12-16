@@ -1,18 +1,5 @@
 import javax.swing.*;
 
-/**
- * Main Entry Point untuk Snake & Ladder Game
- *
- * CARA PAKAI:
- * 1. Pertama kali: Run CalibrationMode.java untuk kalibrasi node positions
- * 2. Setelah kalibrasi selesai: Run Main.java ini untuk bermain game
- *
- * Board: 74 nodes
- * Features:
- * - Dadu warna (Hijau=Maju, Merah=Mundur)
- * - Dijkstra algorithm untuk posisi prima
- * - Tangga (ladder) shortcuts
- */
 public class Main {
     public static void main(String[] args) {
         // Print startup info
