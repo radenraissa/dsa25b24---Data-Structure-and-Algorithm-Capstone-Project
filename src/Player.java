@@ -1,5 +1,68 @@
+//import java.awt.*;
+//import java.util.Stack;
+//
+//class Player {
+//    private String name;
+//    private int position;
+//    private Color color;
+//    private int score;
+//    private int wins;
+//    private Stack<Integer> history;
+//
+//    public Player(String name, Color color) {
+//        this.name = name;
+//        this.position = 1;
+//        this.color = color;
+//        this.score = 0;
+//        this.wins = 0;
+//        this.history = new Stack<>();
+//        this.history.push(1);
+//    }
+//
+//    public String getName() { return name; }
+//    public int getPosition() { return position; }
+//    public Color getColor() { return color; }
+//
+//    public int getScore() { return score; }
+//    public void addScore(int points) { this.score += points; }
+//
+//    public int getWins() { return wins; }
+//    public void addWin() { this.wins++; }
+//
+//    public void setPosition(int position) { this.position = position; }
+//
+//    public void recordStep(int pos) { history.push(pos); }
+//
+//    public int undoStep() {
+//        if (history.size() > 1) {
+//            history.pop();
+//            return history.peek();
+//        }
+//        return 1;
+//    }
+//
+//    public int peekHistory() {
+//        return history.isEmpty() ? 1 : history.peek();
+//    }
+//
+//    public void reset() {
+//        this.position = 1;
+//        this.history.clear();
+//        this.history.push(1);
+//    }
+//
+//    @Override
+//    public String toString() {
+//        return name + " (Score: " + score + " | Wins: " + wins + ")";
+//    }
+//}
+
 import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.Stack;
+import javax.imageio.ImageIO;
 
 class Player {
     private String name;
@@ -9,7 +72,10 @@ class Player {
     private int wins;
     private Stack<Integer> history;
 
-    public Player(String name, Color color) {
+    // IMAGE PION
+    private BufferedImage pawnImage;
+
+    public Player(String name, Color color, int index) {
         this.name = name;
         this.position = 1;
         this.color = color;
@@ -17,17 +83,26 @@ class Player {
         this.wins = 0;
         this.history = new Stack<>();
         this.history.push(1);
+
+        // Load image pion (player1.png, player2.png, dst)
+        try {
+            pawnImage = ImageIO.read(new File("player" + index + ".png"));
+        } catch (IOException e) {
+            System.err.println("Gagal load image pion player" + index);
+            e.printStackTrace();
+        }
     }
 
     public String getName() { return name; }
     public int getPosition() { return position; }
     public Color getColor() { return color; }
+    public BufferedImage getPawnImage() { return pawnImage; }
 
     public int getScore() { return score; }
-    public void addScore(int points) { this.score += points; }
+    public void addScore(int points) { score += points; }
 
     public int getWins() { return wins; }
-    public void addWin() { this.wins++; }
+    public void addWin() { wins++; }
 
     public void setPosition(int position) { this.position = position; }
 
@@ -41,18 +116,15 @@ class Player {
         return 1;
     }
 
-    public int peekHistory() {
-        return history.isEmpty() ? 1 : history.peek();
-    }
-
     public void reset() {
-        this.position = 1;
-        this.history.clear();
-        this.history.push(1);
+        position = 1;
+        history.clear();
+        history.push(1);
     }
 
     @Override
     public String toString() {
-        return name + " (Score: " + score + " | Wins: " + wins + ")";
+        return name + " (Wins: " + wins + ")";
     }
 }
+

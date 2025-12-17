@@ -68,7 +68,7 @@ class GameGUI extends JFrame {
             if (name == null || name.trim().isEmpty()) {
                 name = defaultName;
             }
-            turnManager.addPlayer(new Player(name, playerColors[i]));
+            turnManager.addPlayer(new Player(name, playerColors[i], i + 1));
         }
     }
 
