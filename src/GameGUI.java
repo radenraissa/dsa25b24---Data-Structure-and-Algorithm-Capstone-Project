@@ -179,6 +179,7 @@ class GameGUI extends JFrame {
         btn.setAlignmentX(Component.CENTER_ALIGNMENT);
     }
 
+    // --- FIX: Menggunakan Logic CalculatePath yang Benar ---
     private void rollDice() {
         if (isAnimating) return;
 
@@ -196,32 +197,8 @@ class GameGUI extends JFrame {
         log(currentPlayer.getName() + " rolled " +
                 (isGreen ? "GREEN" : "RED") + " " + steps);
 
-        ArrayList<Integer> path = new ArrayList<>();
-        path.add(currentPos);
-
-        if (isGreen) {
-            // MAJU
-            for (int i = 0; i < steps; i++) {
-                currentPos++;
-                if (currentPos > board.getSize()) {
-                    currentPos = board.getSize();
-                    break;
-                }
-                path.add(currentPos);
-            }
-        } else {
-            // MUNDUR (FIXED)
-            int tempPos = currentPos;
-            for (int i = 0; i < steps; i++) {
-                tempPos--;
-                if (tempPos < 1) {
-                    tempPos = 1;
-                    path.add(1);
-                    break;
-                }
-                path.add(tempPos);
-            }
-        }
+        // Panggil Logic Path Calculation yang sudah ada tapi tidak terpakai
+        ArrayList<Integer> path = calculatePath(currentPlayer, currentPos, steps, isGreen);
 
         movementManager.setPath(path);
         isAnimating = true;
@@ -230,26 +207,26 @@ class GameGUI extends JFrame {
         delayMovementStart(currentPlayer);
     }
 
-    // ✅ NEW METHOD: Calculate path based on game logic
+    // ✅ Method Logic Utama (Dijkstra + Bounce)
     private ArrayList<Integer> calculatePath(Player player, int currentPos, int steps, boolean isGreen) {
         ArrayList<Integer> path = new ArrayList<>();
         path.add(currentPos);
 
+        // --- SKENARIO 1: MUNDUR (DADU MERAH) ---
         if (!isGreen) {
-            // Backward movement
             for (int i = 0; i < steps; i++) {
                 int prevPos = player.undoStep();
                 path.add(prevPos);
                 if (prevPos == 1) break;
             }
+            infoLabel.setText("Moving backward...");
             return path;
         }
 
-        // Green dice logic
         boolean isPrime = isPrime(currentPos);
         int boardSize = board.getSize();
 
-        // Dijkstra path for prime positions
+        // --- SKENARIO 2: DIJKSTRA (HIJAU + PRIMA + TIDAK OVERSHOOT) ---
         if (isPrime && (currentPos + steps <= boardSize)) {
             log("✨ PRIME POSITION (" + currentPos + ")! Dijkstra activated!");
 
@@ -257,22 +234,24 @@ class GameGUI extends JFrame {
             ArrayList<Integer> fullPath = solver.getShortestPath(currentPos, boardSize);
 
             int stepsTaken = 0;
+            // Ambil langkah dari path Dijkstra
             for (int i = 1; i < fullPath.size() && stepsTaken < steps; i++) {
                 int nextNode = fullPath.get(i);
                 path.add(nextNode);
-                player.recordStep(nextNode);
+                player.recordStep(nextNode); // Update history agar sinkron
                 stepsTaken++;
             }
+            infoLabel.setText("Moving via Dijkstra...");
             return path;
         }
 
-        // Normal forward movement with bounce-back
+        // --- SKENARIO 3: NORMAL MAJU + PANTUL (BOUNCE) ---
         int tempPos = currentPos;
         int moveDir = 1;
 
         for (int i = 0; i < steps; i++) {
             if (tempPos == boardSize) {
-                moveDir = -1;
+                moveDir = -1; // Memantul mundur
             } else if (tempPos == 1) {
                 moveDir = 1;
             }
@@ -283,54 +262,43 @@ class GameGUI extends JFrame {
             if (moveDir == 1) {
                 player.recordStep(tempPos);
             } else {
-                player.undoStep();
+                player.undoStep(); // Hapus history saat memantul
             }
         }
 
         if (moveDir == -1) {
             log("↩ Overshot! Bouncing back.");
         }
+        infoLabel.setText("Moving forward...");
 
         return path;
     }
 
     private void delayMovementStart(Player player) {
-        // Tunggu sampai sound dadu selesai
+        // Tunggu sound dadu selesai + sedikit buffer
         long diceDuration = soundManager.getDiceDuration();
+        int delay = (int) Math.min(diceDuration, 1000);
 
-        Timer diceFinishTimer = new Timer((int)diceDuration, e -> {
+        Timer startTimer = new Timer(delay, e -> {
             ((Timer) e.getSource()).stop();
-
-            // Setelah sound dadu selesai, tunggu 1 detik lagi
-            Timer delayTimer = new Timer(10, ev -> {
-                ((Timer) ev.getSource()).stop();
-                infoLabel.setText("Moving...");
-                animateMovement(player);
-            });
-            delayTimer.setRepeats(false);
-            delayTimer.start();
+            animateMovement(player);
         });
-        diceFinishTimer.setRepeats(false);
-        diceFinishTimer.start();
+        startTimer.setRepeats(false);
+        startTimer.start();
     }
 
     private void animateMovement(Player player) {
-        // Timer untuk setiap langkah dengan jeda 0.5 detik
         animationTimer = new Timer(500, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 Integer next = movementManager.popNextPosition();
 
                 if (next != null) {
-                    player.setPosition(next);
+                    player.setPosition(next); // Update posisi visual & logic
                     boardPanel.repaint();
-
-                    // Putar sound move untuk setiap langkah
                     soundManager.playMove();
                     infoLabel.setText("Position: " + next);
-
                 } else {
-                    // Animasi selesai
                     animationTimer.stop();
                     isAnimating = false;
                     finishTurn(player);
@@ -343,17 +311,16 @@ class GameGUI extends JFrame {
     private void finishTurn(Player player) {
         int finalPos = player.getPosition();
 
-        // --- 1. LOGIKA SCORE (DIPULIHKAN) ---
+        // 1. Cek Score Effect
         int scoreEffect = board.getScoreEffect(finalPos);
         if (scoreEffect != 0) {
             player.addScore(scoreEffect);
             String sign = scoreEffect > 0 ? "+" : "";
             log("⭐ Node " + finalPos + ": " + sign + scoreEffect + " pts");
-            // Sound efek score bisa ditambahkan di sini jika ada (misal playCoin())
             updateScoreBoard();
         }
 
-        // --- 2. LOGIKA MENANG ---
+        // 2. Cek Menang
         if (finalPos == board.getSize()) {
             soundManager.playVictory();
             player.addWin();
@@ -371,13 +338,11 @@ class GameGUI extends JFrame {
             rollButton.setVisible(false);
             playAgainButton.setVisible(true);
             infoLabel.setText("Round " + currentRound + " finished!");
-
-            // Tampilkan stats otomatis di akhir ronde
             showStatistics();
             return;
         }
 
-        // --- 3. GANTI GILIRAN ---
+        // 3. Ganti Giliran
         turnManager.nextTurn();
         Player nextPlayer = turnManager.getCurrentPlayer();
         turnLabel.setText("Turn: " + nextPlayer.getName());
@@ -390,7 +355,6 @@ class GameGUI extends JFrame {
         currentRound++;
         setTitle("Snake & Ladder Adventure - Round " + currentRound);
 
-        // Reset posisi (Score dan Wins TETAP ADA karena tidak di-reset di method reset() Player)
         for (Player p : turnManager.getAllPlayers()) {
             p.reset();
         }
@@ -408,7 +372,6 @@ class GameGUI extends JFrame {
     }
 
     private void showStatistics() {
-        // Menggunakan helper dari GameStats
         JOptionPane.showMessageDialog(this,
                 GameStats.getTop3Stats(turnManager.getAllPlayers()),
                 "Leaderboard",
@@ -419,8 +382,6 @@ class GameGUI extends JFrame {
         scorePanel.removeAll();
 
         List<Player> players = turnManager.getAllPlayers();
-        // Sort sementara untuk display (berdasarkan score tertinggi)
-        // Kita copy list agar urutan giliran main (TurnManager) tidak berantakan
         List<Player> displayList = new ArrayList<>(players);
         displayList.sort((p1, p2) -> Integer.compare(p2.getScore(), p1.getScore()));
 
@@ -434,7 +395,6 @@ class GameGUI extends JFrame {
             nameLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
             nameLabel.setForeground(p.getColor().darker());
 
-            // TAMPILKAN SCORE DAN WINS
             JLabel statsLabel = new JLabel(p.getScore() + " pts | " + p.getWins() + " W");
             statsLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
 
@@ -447,7 +407,6 @@ class GameGUI extends JFrame {
         scorePanel.repaint();
     }
 
-    // Helper Prima
     static boolean isPrime(int n) {
         if (n <= 1) return false;
         if (n == 2) return true;
