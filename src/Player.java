@@ -58,62 +58,65 @@
 //}
 
 import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
 import java.util.Stack;
-import javax.imageio.ImageIO;
 
 class Player {
+
     private String name;
     private int position;
     private Color color;
     private int score;
     private int wins;
+
+    // 🔹 history langkah (dipakai undo & animasi)
     private Stack<Integer> history;
 
-    // IMAGE PION
-    private BufferedImage pawnImage;
+    // ================= CONSTRUCTOR =================
 
-    public Player(String name, Color color, int index) {
+    // Dipakai jika hanya name & color
+    public Player(String name, Color color) {
+        this(name, color, 1);
+    }
+
+    // Dipakai GameGUI (name, color, startPosition)
+    public Player(String name, Color color, int startPosition) {
         this.name = name;
-        this.position = 1;
         this.color = color;
+        this.position = clamp(startPosition);
         this.score = 0;
         this.wins = 0;
-        this.history = new Stack<>();
-        this.history.push(1);
 
-        // Load image pion (player1.png, player2.png, dst)
-        try {
-            pawnImage = ImageIO.read(new File("player" + index + ".png"));
-        } catch (IOException e) {
-            System.err.println("Gagal load image pion player" + index);
-            e.printStackTrace();
-        }
+        history = new Stack<>();
+        history.push(this.position);
     }
+
+    // ================= GETTER =================
 
     public String getName() { return name; }
     public int getPosition() { return position; }
     public Color getColor() { return color; }
-    public BufferedImage getPawnImage() { return pawnImage; }
-
     public int getScore() { return score; }
-    public void addScore(int points) { score += points; }
-
     public int getWins() { return wins; }
-    public void addWin() { wins++; }
 
-    public void setPosition(int position) { this.position = position; }
+    // ================= GAME LOGIC =================
 
-    public void recordStep(int pos) { history.push(pos); }
+    public void setPosition(int pos) {
+        this.position = clamp(pos);
+        history.push(this.position);
+    }
+
+    // ✅ INI YANG HILANG & MENYEBABKAN ERROR
+    public void recordStep(int pos) {
+        history.push(clamp(pos));
+    }
 
     public int undoStep() {
         if (history.size() > 1) {
             history.pop();
-            return history.peek();
+            position = history.peek();
+            return position;
         }
-        return 1;
+        return position;
     }
 
     public void reset() {
@@ -122,9 +125,19 @@ class Player {
         history.push(1);
     }
 
+    public void addScore(int s) { score += s; }
+    public void addWin() { wins++; }
+
+    // ================= UTIL =================
+
+    private int clamp(int pos) {
+        if (pos < 1) return 1;
+        if (pos > 74) return 74;
+        return pos;
+    }
+
     @Override
     public String toString() {
-        return name + " (Wins: " + wins + ")";
+        return name + " | Pos: " + position + " | Wins: " + wins;
     }
 }
-

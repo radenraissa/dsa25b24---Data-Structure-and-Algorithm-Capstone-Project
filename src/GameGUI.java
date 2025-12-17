@@ -68,7 +68,7 @@ class GameGUI extends JFrame {
             if (name == null || name.trim().isEmpty()) {
                 name = defaultName;
             }
-            turnManager.addPlayer(new Player(name, playerColors[i], i + 1));
+            turnManager.addPlayer(new Player(name, playerColors[i]));
         }
     }
 
@@ -186,28 +186,47 @@ class GameGUI extends JFrame {
         Player currentPlayer = turnManager.getCurrentPlayer();
         int currentPos = currentPlayer.getPosition();
 
-        // ✅ STEP 1: Roll dice
         dice.roll();
         dicePanel.setRolled(true);
-        dicePanel.repaint();
-
-        // ✅ STEP 2: Play dice sound
         soundManager.playDice();
 
         int steps = dice.getNumber();
-        boolean isGreen = (dice.getColor() == Dice.DiceColor.GREEN);
+        boolean isGreen = dice.getColor() == Dice.DiceColor.GREEN;
 
-        String direction = isGreen ? "FORWARD ⬆" : "BACKWARD ⬇";
-        String colorName = isGreen ? "GREEN" : "RED";
-        log(currentPlayer.getName() + " rolled " + colorName + " " + steps + " - " + direction);
-        infoLabel.setText("Rolling dice...");
+        log(currentPlayer.getName() + " rolled " +
+                (isGreen ? "GREEN" : "RED") + " " + steps);
 
-        // Calculate path based on dice color
-        ArrayList<Integer> path = calculatePath(currentPlayer, currentPos, steps, isGreen);
+        ArrayList<Integer> path = new ArrayList<>();
+        path.add(currentPos);
+
+        if (isGreen) {
+            // MAJU
+            for (int i = 0; i < steps; i++) {
+                currentPos++;
+                if (currentPos > board.getSize()) {
+                    currentPos = board.getSize();
+                    break;
+                }
+                path.add(currentPos);
+            }
+        } else {
+            // MUNDUR (FIXED)
+            int tempPos = currentPos;
+            for (int i = 0; i < steps; i++) {
+                tempPos--;
+                if (tempPos < 1) {
+                    tempPos = 1;
+                    path.add(1);
+                    break;
+                }
+                path.add(tempPos);
+            }
+        }
+
         movementManager.setPath(path);
         isAnimating = true;
+        infoLabel.setText("Rolling dice...");
 
-        // ✅ STEP 3: Wait for dice sound to finish + 1 second delay
         delayMovementStart(currentPlayer);
     }
 
