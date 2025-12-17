@@ -18,6 +18,7 @@ class GameGUI extends JFrame {
     private JButton rollButton;
     private JButton playAgainButton;
     private JButton statsButton;
+    private JButton backButton;
 
     private JLabel infoLabel;
     private JLabel turnLabel;
@@ -42,10 +43,10 @@ class GameGUI extends JFrame {
 
     private void setupPlayersInput() {
         Color[] playerColors = {
-                new Color(231, 76, 60),
-                new Color(52, 152, 219),
-                new Color(46, 204, 113),
-                new Color(241, 196, 15)
+                new Color(231, 76, 60),   // Red
+                new Color(52, 152, 219),  // Blue
+                new Color(46, 204, 113),  // Green
+                new Color(241, 196, 15)   // Yellow
         };
 
         String[] options = {"2 Players", "3 Players", "4 Players"};
@@ -57,7 +58,11 @@ class GameGUI extends JFrame {
                 null, options, options[0]);
 
         int numPlayers = choice + 2;
-        if (choice == -1) System.exit(0);
+        if (choice == -1) {
+            new Main().setVisible(true);
+            this.dispose();
+            return;
+        }
 
         for (int i = 0; i < numPlayers; i++) {
             String defaultName = "Player " + (i + 1);
@@ -129,23 +134,37 @@ class GameGUI extends JFrame {
         buttonContainer.setBackground(new Color(245, 245, 245));
         buttonContainer.setAlignmentX(Component.CENTER_ALIGNMENT);
 
+        // 1. ROLL BUTTON (Lime Green)
         rollButton = new JButton("ROLL DICE");
         setupButtonStyle(rollButton, new Color(46, 204, 113));
         rollButton.addActionListener(e -> rollDice());
         buttonContainer.add(rollButton);
 
+        // Play Again Button (Lime Green - Hidden initially)
         playAgainButton = new JButton("PLAY NEXT ROUND");
-        setupButtonStyle(playAgainButton, new Color(52, 152, 219));
+        setupButtonStyle(playAgainButton, new Color(46, 204, 113));
         playAgainButton.setVisible(false);
         playAgainButton.addActionListener(e -> startNextRound());
         buttonContainer.add(Box.createVerticalStrut(10));
         buttonContainer.add(playAgainButton);
 
+        // 2. STATS BUTTON (Blue)
         statsButton = new JButton("📊 VIEW STATS");
-        setupButtonStyle(statsButton, new Color(155, 89, 182));
+        setupButtonStyle(statsButton, new Color(52, 152, 219));
         statsButton.addActionListener(e -> showStatistics());
         buttonContainer.add(Box.createVerticalStrut(10));
         buttonContainer.add(statsButton);
+
+        // 3. BACK BUTTON (Red)
+        backButton = new JButton("⬅ BACK TO MENU");
+        setupButtonStyle(backButton, new Color(231, 76, 60));
+        backButton.addActionListener(e -> {
+            if(soundManager != null) soundManager.stopTheme();
+            new Main().setVisible(true);
+            this.dispose();
+        });
+        buttonContainer.add(Box.createVerticalStrut(10));
+        buttonContainer.add(backButton);
 
         rightPanel.add(buttonContainer);
         rightPanel.add(Box.createVerticalStrut(15));
@@ -170,16 +189,19 @@ class GameGUI extends JFrame {
         log("🎮 Game started!");
     }
 
+    // ✅ FIXED: Button Style Logic
     private void setupButtonStyle(JButton btn, Color bg) {
         btn.setFont(new Font("Segoe UI", Font.BOLD, 16));
         btn.setBackground(bg);
         btn.setForeground(Color.WHITE);
         btn.setFocusPainted(false);
+        btn.setBorderPainted(false); // Removes border for a solid flat color
+        btn.setOpaque(true);         // Forces background color on Mac/Windows
         btn.setMaximumSize(new Dimension(220, 45));
         btn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
     }
 
-    // --- FIX: Menggunakan Logic CalculatePath yang Benar ---
     private void rollDice() {
         if (isAnimating) return;
 
@@ -197,7 +219,6 @@ class GameGUI extends JFrame {
         log(currentPlayer.getName() + " rolled " +
                 (isGreen ? "GREEN" : "RED") + " " + steps);
 
-        // Panggil Logic Path Calculation yang sudah ada tapi tidak terpakai
         ArrayList<Integer> path = calculatePath(currentPlayer, currentPos, steps, isGreen);
 
         movementManager.setPath(path);
@@ -207,12 +228,10 @@ class GameGUI extends JFrame {
         delayMovementStart(currentPlayer);
     }
 
-    // ✅ Method Logic Utama (Dijkstra + Bounce)
     private ArrayList<Integer> calculatePath(Player player, int currentPos, int steps, boolean isGreen) {
         ArrayList<Integer> path = new ArrayList<>();
         path.add(currentPos);
 
-        // --- SKENARIO 1: MUNDUR (DADU MERAH) ---
         if (!isGreen) {
             for (int i = 0; i < steps; i++) {
                 int prevPos = player.undoStep();
@@ -226,7 +245,6 @@ class GameGUI extends JFrame {
         boolean isPrime = isPrime(currentPos);
         int boardSize = board.getSize();
 
-        // --- SKENARIO 2: DIJKSTRA (HIJAU + PRIMA + TIDAK OVERSHOOT) ---
         if (isPrime && (currentPos + steps <= boardSize)) {
             log("✨ PRIME POSITION (" + currentPos + ")! Dijkstra activated!");
 
@@ -234,24 +252,22 @@ class GameGUI extends JFrame {
             ArrayList<Integer> fullPath = solver.getShortestPath(currentPos, boardSize);
 
             int stepsTaken = 0;
-            // Ambil langkah dari path Dijkstra
             for (int i = 1; i < fullPath.size() && stepsTaken < steps; i++) {
                 int nextNode = fullPath.get(i);
                 path.add(nextNode);
-                player.recordStep(nextNode); // Update history agar sinkron
+                player.recordStep(nextNode);
                 stepsTaken++;
             }
             infoLabel.setText("Moving via Dijkstra...");
             return path;
         }
 
-        // --- SKENARIO 3: NORMAL MAJU + PANTUL (BOUNCE) ---
         int tempPos = currentPos;
         int moveDir = 1;
 
         for (int i = 0; i < steps; i++) {
             if (tempPos == boardSize) {
-                moveDir = -1; // Memantul mundur
+                moveDir = -1;
             } else if (tempPos == 1) {
                 moveDir = 1;
             }
@@ -262,7 +278,7 @@ class GameGUI extends JFrame {
             if (moveDir == 1) {
                 player.recordStep(tempPos);
             } else {
-                player.undoStep(); // Hapus history saat memantul
+                player.undoStep();
             }
         }
 
@@ -275,7 +291,6 @@ class GameGUI extends JFrame {
     }
 
     private void delayMovementStart(Player player) {
-        // Tunggu sound dadu selesai + sedikit buffer
         long diceDuration = soundManager.getDiceDuration();
         int delay = (int) Math.min(diceDuration, 1000);
 
@@ -294,7 +309,7 @@ class GameGUI extends JFrame {
                 Integer next = movementManager.popNextPosition();
 
                 if (next != null) {
-                    player.setPosition(next); // Update posisi visual & logic
+                    player.setPosition(next);
                     boardPanel.repaint();
                     soundManager.playMove();
                     infoLabel.setText("Position: " + next);
@@ -311,7 +326,6 @@ class GameGUI extends JFrame {
     private void finishTurn(Player player) {
         int finalPos = player.getPosition();
 
-        // 1. Cek Score Effect
         int scoreEffect = board.getScoreEffect(finalPos);
         if (scoreEffect != 0) {
             player.addScore(scoreEffect);
@@ -320,7 +334,6 @@ class GameGUI extends JFrame {
             updateScoreBoard();
         }
 
-        // 2. Cek Menang
         if (finalPos == board.getSize()) {
             soundManager.playVictory();
             player.addWin();
@@ -342,7 +355,6 @@ class GameGUI extends JFrame {
             return;
         }
 
-        // 3. Ganti Giliran
         turnManager.nextTurn();
         Player nextPlayer = turnManager.getCurrentPlayer();
         turnLabel.setText("Turn: " + nextPlayer.getName());
