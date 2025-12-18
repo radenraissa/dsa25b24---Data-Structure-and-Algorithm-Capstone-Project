@@ -85,7 +85,7 @@ public class Main extends JFrame {
         btnPanel.setOpaque(false);
         btnPanel.setBorder(new EmptyBorder(20, 200, 50, 200)); // Padding kiri kanan besar agar tombol di tengah
 
-        JButton btnLadder = createMinecraftButton("Snake & Ladder");
+        JButton btnLadder = createMinecraftButton("Smurf & Ladder");
         JButton btnPacman = createMinecraftButton("Pacman Maze");
 
         // --- ACTIONS ---

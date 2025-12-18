@@ -78,7 +78,7 @@ class GameGUI extends JFrame {
     }
 
     private void initGUI() {
-        setTitle("Snake & Ladder Adventure - Round " + currentRound);
+        setTitle("Smurf & Ladder - Round " + currentRound);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
         getContentPane().setBackground(new Color(135, 206, 235));
@@ -98,7 +98,7 @@ class GameGUI extends JFrame {
         rightPanel.setPreferredSize(new Dimension(300, 0));
 
         // Turn Label
-        turnLabel = new JLabel("Turn: " + turnManager.getCurrentPlayer().getName());
+        turnLabel = new JLabel("SMURF & LADDER");
         turnLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
         turnLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         rightPanel.add(turnLabel);
