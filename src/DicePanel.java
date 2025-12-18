@@ -4,11 +4,16 @@ import java.awt.*;
 class DicePanel extends JPanel {
     private Dice dice;
     private boolean rolled;
+    private static final int DICE_SIZE = 70;
+    private static final Color DICE_BG_COLOR = new Color(67, 97, 238); // biru
+    private static final int BG_PADDING = 12;
+    private Timer rollAnimationTimer;
+    private int animationCount = 0;
 
     public DicePanel(Dice dice) {
         this.dice = dice;
         this.rolled = false;
-        setPreferredSize(new Dimension(200, 150));
+        setPreferredSize(new Dimension(240, 200));
         setBackground(new Color(67, 97, 238));  // Biru medium (kanan atas)
     }
 
@@ -23,15 +28,33 @@ class DicePanel extends JPanel {
         Graphics2D g2d = (Graphics2D) g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
+        int x = (getWidth() - DICE_SIZE) / 2;
+        int y = (getHeight() - DICE_SIZE) / 2 - 10;
+
+// ⬛ background biru di belakang dadu + angka
+        int bgY = y - BG_PADDING;
+        int bgW = 220;
+        int bgX = (getWidth() - bgW) / 2;
+        int bgH = DICE_SIZE + 55 + BG_PADDING * 2; // extra buat angka
+
+        g2d.setColor(new Color(65, 166, 239));
+        g2d.fillRoundRect(bgX, bgY, bgW, bgH, 20, 20);
+
         if (!rolled) {
+            String text = "Click ROLL to start";
             g2d.setColor(Color.WHITE);
             g2d.setFont(new Font("Arial", Font.BOLD, 14));
-            g2d.drawString("Click ROLL to start", 25, 75);
+
+            FontMetrics fm = g2d.getFontMetrics();
+            int textX = (getWidth() - fm.stringWidth(text)) / 2;
+            int textY = (getHeight() + fm.getAscent()) / 2 - 5;
+
+            g2d.drawString(text, textX, textY);
             return;
         }
 
-        // Draw single dice in center
-        drawDice(g2d, 65, 30, dice);
+// 🎲 gambar dadu di atas background
+        drawDice(g2d, x, y, dice);
     }
 
     private void drawDice(Graphics2D g2d, int x, int y, Dice dice) {
@@ -89,4 +112,25 @@ class DicePanel extends JPanel {
                 break;
         }
     }
+
+    public void playRollAnimation(Runnable onFinish) {
+        animationCount = 0;
+        rolled = true;
+
+        rollAnimationTimer = new Timer(200, e -> {
+            // random angka 1–6
+            dice.forceRandomDisplay();
+
+            repaint();
+            animationCount++;
+
+            if (animationCount >= 10) {
+                rollAnimationTimer.stop();
+                onFinish.run(); // balik ke GameGUI
+            }
+        });
+
+        rollAnimationTimer.start();
+    }
+
 }

@@ -20,7 +20,7 @@ public class Main extends JFrame {
 
         JLabel title = new JLabel("CHOOSE YOUR GAME!");
         title.setFont(new Font("Poppins", Font.BOLD, 36));
-        title.setForeground(Color.BLACK);
+        title.setForeground(Color.WHITE);
         titlePanel.add(title);
 
         add(titlePanel, BorderLayout.NORTH);
@@ -31,8 +31,8 @@ public class Main extends JFrame {
         btnPanel.setBackground(new Color(44, 62, 80));
         btnPanel.setBorder(new EmptyBorder(30, 100, 50, 100));
 
-        JButton btnLadder = createMenuButton("🐍 SNAKE & LADDER", new Color(46, 204, 113));
-        JButton btnPacman = createMenuButton("ᗧ••• PACMAN MAZE", new Color(241, 196, 15));
+        JButton btnLadder = createMenuButton("SNAKE & LADDER", new Color(46, 204, 113));
+        JButton btnPacman = createMenuButton("PACMAN MAZE", new Color(241, 196, 15));
 
         // --- ACTIONS ---
 

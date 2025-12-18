@@ -105,7 +105,7 @@ class GameGUI extends JFrame {
         rightPanel.add(Box.createVerticalStrut(20));
 
         // Scoreboard Label
-        JLabel scoreTitle = new JLabel("🏆 SCOREBOARD");
+        JLabel scoreTitle = new JLabel("SCOREBOARD");
         scoreTitle.setFont(new Font("Segoe UI", Font.BOLD, 14));
         scoreTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
         rightPanel.add(scoreTitle);
@@ -149,14 +149,14 @@ class GameGUI extends JFrame {
         buttonContainer.add(playAgainButton);
 
         // 2. STATS BUTTON (Blue)
-        statsButton = new JButton("📊 VIEW STATS");
+        statsButton = new JButton("VIEW STATS");
         setupButtonStyle(statsButton, new Color(52, 152, 219));
         statsButton.addActionListener(e -> showStatistics());
         buttonContainer.add(Box.createVerticalStrut(10));
         buttonContainer.add(statsButton);
 
         // 3. BACK BUTTON (Red)
-        backButton = new JButton("⬅ BACK TO MENU");
+        backButton = new JButton("BACK TO MENU");
         setupButtonStyle(backButton, new Color(231, 76, 60));
         backButton.addActionListener(e -> {
             if(soundManager != null) soundManager.stopTheme();
@@ -186,7 +186,7 @@ class GameGUI extends JFrame {
         add(rightPanel, BorderLayout.EAST);
         pack();
         setLocationRelativeTo(null);
-        log("🎮 Game started!");
+        log("Game started!");
     }
 
     // ✅ FIXED: Button Style Logic
@@ -203,29 +203,41 @@ class GameGUI extends JFrame {
     }
 
     private void rollDice() {
-        if (isAnimating) return;
+        if (isAnimating) return;  // mencegah double click
 
         rollButton.setEnabled(false);
         Player currentPlayer = turnManager.getCurrentPlayer();
-        int currentPos = currentPlayer.getPosition();
 
-        dice.roll();
-        dicePanel.setRolled(true);
+        // 🔊 Putar suara dadu segera
         soundManager.playDice();
 
-        int steps = dice.getNumber();
-        boolean isGreen = dice.getColor() == Dice.DiceColor.GREEN;
+        // 🔁 ANIMASI DADU
+        dicePanel.playRollAnimation(() -> {
 
-        log(currentPlayer.getName() + " rolled " +
-                (isGreen ? "GREEN" : "RED") + " " + steps);
+            // 🎯 ROLL ASLI SETELAH ANIMASI
+            dice.roll();
+            dicePanel.repaint();
 
-        ArrayList<Integer> path = calculatePath(currentPlayer, currentPos, steps, isGreen);
+            int steps = dice.getNumber();
+            boolean isGreen = dice.getColor() == Dice.DiceColor.GREEN;
 
-        movementManager.setPath(path);
-        isAnimating = true;
-        infoLabel.setText("Rolling dice...");
+            log(currentPlayer.getName() + " rolled " +
+                    (isGreen ? "GREEN" : "RED") + " " + steps);
 
-        delayMovementStart(currentPlayer);
+            // Hitung path pion
+            ArrayList<Integer> path =
+                    calculatePath(currentPlayer,
+                            currentPlayer.getPosition(),
+                            steps,
+                            isGreen);
+
+            // Siapkan movement
+            movementManager.setPath(path);
+            isAnimating = true;
+
+            // Delay sebelum pion mulai bergerak
+            delayMovementStart(currentPlayer);
+        });
     }
 
     private ArrayList<Integer> calculatePath(Player player, int currentPos, int steps, boolean isGreen) {
@@ -246,7 +258,7 @@ class GameGUI extends JFrame {
         int boardSize = board.getSize();
 
         if (isPrime && (currentPos + steps <= boardSize)) {
-            log("✨ PRIME POSITION (" + currentPos + ")! Dijkstra activated!");
+            log("PRIME POSITION (" + currentPos + ")! Dijkstra activated!");
 
             DijkstraAlgorithm solver = new DijkstraAlgorithm(board);
             ArrayList<Integer> fullPath = solver.getShortestPath(currentPos, boardSize);
@@ -292,7 +304,7 @@ class GameGUI extends JFrame {
 
     private void delayMovementStart(Player player) {
         long diceDuration = soundManager.getDiceDuration();
-        int delay = (int) Math.min(diceDuration, 1000);
+        int delay = (int) Math.min(diceDuration + 1000, 1000);
 
         Timer startTimer = new Timer(delay, e -> {
             ((Timer) e.getSource()).stop();
@@ -303,21 +315,21 @@ class GameGUI extends JFrame {
     }
 
     private void animateMovement(Player player) {
-        animationTimer = new Timer(500, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                Integer next = movementManager.popNextPosition();
+        animationTimer = new Timer(500, e -> {
+            Integer next = movementManager.popNextPosition();
 
-                if (next != null) {
-                    player.setPosition(next);
-                    boardPanel.repaint();
-                    soundManager.playMove();
-                    infoLabel.setText("Position: " + next);
-                } else {
-                    animationTimer.stop();
-                    isAnimating = false;
-                    finishTurn(player);
-                }
+            if (next != null) {
+                player.setPosition(next);
+                boardPanel.repaint();
+
+                // 🔊 3️⃣ SUARA LANGKAH PER STEP
+                soundManager.playMove();
+
+                infoLabel.setText("Position: " + next);
+            } else {
+                animationTimer.stop();
+                isAnimating = false;
+                finishTurn(player);
             }
         });
         animationTimer.start();
@@ -330,18 +342,18 @@ class GameGUI extends JFrame {
         if (scoreEffect != 0) {
             player.addScore(scoreEffect);
             String sign = scoreEffect > 0 ? "+" : "";
-            log("⭐ Node " + finalPos + ": " + sign + scoreEffect + " pts");
+            log("Node " + finalPos + ": " + sign + scoreEffect + " pts");
             updateScoreBoard();
         }
 
         if (finalPos == board.getSize()) {
             soundManager.playVictory();
             player.addWin();
-            log("🎉 " + player.getName() + " WINS ROUND " + currentRound + "!");
+            log(player.getName() + " WINS ROUND " + currentRound + "!");
             updateScoreBoard();
 
             JOptionPane.showMessageDialog(this,
-                    "🎉 CONGRATULATIONS!\n\n" +
+                    "CONGRATULATIONS!\n\n" +
                             "Winner: " + player.getName() + "\n" +
                             "Total Score: " + player.getScore() + "\n" +
                             "Total Wins: " + player.getWins(),
@@ -379,7 +391,7 @@ class GameGUI extends JFrame {
         boardPanel.repaint();
 
         infoLabel.setText("Round " + currentRound + " started!");
-        log("\n🔄 Round " + currentRound + " started!");
+        log("\nRound " + currentRound + " started!");
         updateScoreBoard();
     }
 

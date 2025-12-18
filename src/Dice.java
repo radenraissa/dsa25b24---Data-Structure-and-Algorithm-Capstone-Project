@@ -32,4 +32,10 @@ class Dice {
     public Color getColorObject() {
         return color == DiceColor.GREEN ? new Color(46, 204, 113) : new Color(231, 76, 60);
     }
+
+    public void forceRandomDisplay() {
+        this.number = 1 + new Random().nextInt(6);
+        Random rand = new Random();
+        this.color = rand.nextBoolean() ? DiceColor.GREEN : DiceColor.RED;
+    }
 }
