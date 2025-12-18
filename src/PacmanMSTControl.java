@@ -13,10 +13,17 @@ public class PacmanMSTControl extends JFrame {
     private SidePanel sidePanel;
     private JButton btnBFS, btnDFS, btnWeighted;
 
+    // 1. Tambahkan instance SoundManager
+    private PacmanSoundManager soundManager;
+
     public PacmanMSTControl() {
         setTitle("Pacman: Algorithm & Graph Analysis Tool");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
+
+        // Inisialisasi SoundManager dan putar Theme Song
+        soundManager = new PacmanSoundManager();
+        soundManager.startTheme();
 
         // --- 1. SETUP PANELS ---
         sidePanel = new SidePanel();
@@ -75,6 +82,9 @@ public class PacmanMSTControl extends JFrame {
 
         // BACK ACTION: Return to Main Menu
         btnBack.addActionListener(e -> {
+            // 2. Stop theme song sebelum keluar
+            soundManager.stopTheme();
+
             new Main().setVisible(true); // Open Main Menu
             this.dispose(); // Close Pacman Window
         });
@@ -125,10 +135,18 @@ public class PacmanMSTControl extends JFrame {
 
         sidePanel.configureMode(gamePanel.isWeightedMode);
         sidePanel.addLog(">> Calculating path...");
+
+        // 3. Mulai sound move saat pacman mulai bergerak
+        soundManager.startMove();
+
         gamePanel.startSimulation(algorithm);
     }
 
     public void onGameFinished() {
+        // 4. Hentikan sound move (memotong jika < 6 detik) dan mainkan sound finish
+        soundManager.stopMove();
+        soundManager.playFinish();
+
         sidePanel.updateStatus("FINISHED");
         sidePanel.addLog(">> Goal Reached!");
 
@@ -163,6 +181,9 @@ public class PacmanMSTControl extends JFrame {
                 sidePanel.resetStats();
                 sidePanel.configureMode(true);
                 sidePanel.updateAlgorithm(algo);
+
+                // Mulai sound lagi untuk simulasi ulang
+                soundManager.startMove();
                 gamePanel.startSimulation(algo);
             } else {
                 enableButtons(true);
@@ -173,11 +194,16 @@ public class PacmanMSTControl extends JFrame {
             enableButtons(true);
         } else {
             // Exit Logic -> Back to Menu
+            soundManager.stopTheme(); // Pastikan stop theme saat exit
             new Main().setVisible(true);
             this.dispose();
         }
     }
 }
+
+// ... (Sisa kode SidePanel, LegendPanel, GamePanel, dan MazePlayer TETAP SAMA seperti sebelumnya) ...
+// Pastikan Anda tetap menyertakan kelas-kelas tersebut di bawah class PacmanMSTControl ini
+// agar file PacmanMSTControl.java tetap utuh.
 
 // ========================================================
 // 1. SIDE PANEL
