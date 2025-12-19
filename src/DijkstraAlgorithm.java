@@ -5,7 +5,6 @@ public class DijkstraAlgorithm {
     private int size;
 
     public DijkstraAlgorithm(Board board) {
-        // Ambil ukuran dinamis dari Board (sekarang 74)
         this.size = board.getSize() + 1; // +1 untuk index 0
         this.adjMatrix = new int[size][size];
 
@@ -51,7 +50,6 @@ public class DijkstraAlgorithm {
         }
     }
 
-    // Cari node dengan distance terkecil yang belum dikunjungi
     private int findTheNextNode(boolean[] isVisited, int[] dist){
         int min = Integer.MAX_VALUE;
         int minVertex = -1;
@@ -68,19 +66,18 @@ public class DijkstraAlgorithm {
 
     // Algoritma Dijkstra untuk mencari shortest path
     public ArrayList<Integer> getShortestPath(int orig, int dest) {
-        // Initialize distances
         int[] dist = new int[this.size];
         for(int i = 0; i < this.size; i++) {
             dist[i] = Integer.MAX_VALUE;
         }
         dist[orig] = 0;
 
-        // Tracking
+        //Tracking
         boolean[] isVisited = new boolean[this.size];
         int[] prev = new int[this.size];
         Arrays.fill(prev, -1);
 
-        // Main Dijkstra loop
+        //Dijkstra loop
         for(int i = 0; i < this.size; i++){
             int nextNode = findTheNextNode(isVisited, dist);
 
@@ -90,7 +87,6 @@ public class DijkstraAlgorithm {
 
             isVisited[nextNode] = true;
 
-            // Relax edges
             for (int j = 1; j < this.size; j++) {
                 if (!isVisited[j] &&
                         this.adjMatrix[nextNode][j] > 0 &&

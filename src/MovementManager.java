@@ -7,16 +7,6 @@ class MovementManager {
         this.movementStack = new Stack<>();
     }
 
-    // Dipakai untuk dadu biasa (Merah/Hijau non-prima)
-    public void buildMovementStack(int fromPos, int toPos) {
-        movementStack.clear();
-        if (fromPos < toPos) {
-            for (int i = toPos; i > fromPos; i--) movementStack.push(i);
-        } else if (fromPos > toPos) {
-            for (int i = toPos; i < fromPos; i++) movementStack.push(i);
-        }
-    }
-
     // --- BARU: Dipakai untuk Dijkstra ---
     public void setPath(ArrayList<Integer> path) {
         movementStack.clear();

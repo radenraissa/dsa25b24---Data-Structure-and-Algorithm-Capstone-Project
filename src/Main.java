@@ -6,7 +6,6 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.geom.AffineTransform;
 
 public class Main extends JFrame {
 
@@ -33,7 +32,6 @@ public class Main extends JFrame {
                 g.setColor(MC_BG_COLOR);
                 g.fillRect(0, 0, getWidth(), getHeight());
 
-                // Opsional: Jika mau nambah tekstur kotak-kotak samar
                 g.setColor(new Color(255, 255, 255, 5));
                 for(int i=0; i<getWidth(); i+=32) {
                     g.drawLine(i, 0, i, getHeight());
@@ -49,7 +47,7 @@ public class Main extends JFrame {
         // --- SPACER ATAS ---
         mainPanel.add(Box.createVerticalStrut(50));
 
-        // --- TITLE HEADER (Custom Painting untuk efek 3D Logo) ---
+        // --- TITLE HEADER ---
         JPanel titlePanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -122,7 +120,6 @@ public class Main extends JFrame {
         mainPanel.add(Box.createVerticalStrut(20));
     }
 
-    // --- HELPER: MEMBUAT TOMBOL GAYA MINECRAFT ---
     private JButton createMinecraftButton(String text) {
         JButton btn = new JButton(text);
         btn.setFont(new Font("Monospaced", Font.BOLD, 18));
@@ -131,12 +128,12 @@ public class Main extends JFrame {
         btn.setFocusPainted(false);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        // Membuat efek border 3D kotak-kotak (Bevel)
+        // Border
         Border outside = BorderFactory.createBevelBorder(BevelBorder.RAISED, MC_BUTTON_BORDER_LIGHT, MC_BUTTON_BORDER_DARK);
         Border inside = new EmptyBorder(10, 20, 10, 20); // Padding teks
         btn.setBorder(new CompoundBorder(outside, inside));
 
-        // Hover Effect (Ganti warna & border saat mouse masuk)
+        // Hover Effect
         btn.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {

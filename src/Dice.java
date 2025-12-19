@@ -25,10 +25,6 @@ class Dice {
     public DiceColor getColor() { return color; }
     public int getNumber() { return number; }
 
-    public String getColorString() {
-        return color == DiceColor.GREEN ? "GREEN" : "RED";
-    }
-
     public Color getColorObject() {
         return color == DiceColor.GREEN ? new Color(46, 204, 113) : new Color(231, 76, 60);
     }

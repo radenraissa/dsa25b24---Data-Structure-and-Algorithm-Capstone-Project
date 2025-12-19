@@ -1,8 +1,7 @@
 import java.util.ArrayList;
-import java.util.HashMap; // Import Map
+import java.util.HashMap;
 import java.util.List;
-import java.util.Map;     // Import Map
-import java.awt.Point;
+import java.util.Map;
 
 class Board {
     private BoardNode[] nodes;

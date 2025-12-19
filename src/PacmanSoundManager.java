@@ -3,7 +3,6 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import java.io.File;
 
-//PacmanSoundManager.java
 class PacmanSoundManager {
 
     private Clip themeClip;
@@ -16,7 +15,6 @@ class PacmanSoundManager {
         finishClip = loadClip("resources/sounds/pacman_finish.wav");
     }
 
-    /* ===================== LOAD SOUND ===================== */
 
     private Clip loadClip(String path) {
         try {
@@ -31,9 +29,6 @@ class PacmanSoundManager {
         }
     }
 
-    /* ===================== THEME SONG ===================== */
-
-    // Dipanggil saat game Pacman dimulai
     public void startTheme() {
         if (themeClip == null) return;
 

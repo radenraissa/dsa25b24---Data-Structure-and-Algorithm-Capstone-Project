@@ -13,7 +13,6 @@ public class PacmanMSTControl extends JFrame {
     private SidePanel sidePanel;
     private JButton btnBFS, btnDFS, btnWeighted;
 
-    // 1. Tambahkan instance SoundManager
     private PacmanSoundManager soundManager;
 
     public PacmanMSTControl() {
@@ -21,18 +20,15 @@ public class PacmanMSTControl extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        // Inisialisasi SoundManager dan putar Theme Song
         soundManager = new PacmanSoundManager();
         soundManager.startTheme();
 
-        // --- 1. SETUP PANELS ---
         sidePanel = new SidePanel();
         gamePanel = new GamePanel(this, sidePanel);
 
         add(gamePanel, BorderLayout.CENTER);
         add(sidePanel, BorderLayout.EAST);
 
-        // Panel Bawah (Kontrol)
         JPanel controlPanel = new JPanel();
         controlPanel.setBackground(Color.BLACK);
         controlPanel.setBorder(BorderFactory.createMatteBorder(2, 0, 0, 0, new Color(50, 50, 50)));
@@ -47,10 +43,9 @@ public class PacmanMSTControl extends JFrame {
         btnWeighted = createButton("WEIGHTED (Graph)", neonBlue, buttonFont);
         JButton btnNewMap = createButton("NEW MAZE", neonPurple, buttonFont);
 
-        // --- NEW: BACK BUTTON ---
         JButton btnBack = createButton("⬅ BACK", Color.GRAY, buttonFont);
 
-        // --- ACTIONS ---
+        // Actions
         btnBFS.addActionListener(e -> {
             gamePanel.restorePerfectMaze();
             sidePanel.configureMode(false);
@@ -80,7 +75,7 @@ public class PacmanMSTControl extends JFrame {
             sidePanel.addLog(">> New Maze Generated.");
         });
 
-        // BACK ACTION: Return to Main Menu
+
         btnBack.addActionListener(e -> {
             // 2. Stop theme song sebelum keluar
             soundManager.stopTheme();
@@ -136,14 +131,12 @@ public class PacmanMSTControl extends JFrame {
         sidePanel.configureMode(gamePanel.isWeightedMode);
         sidePanel.addLog(">> Calculating path...");
 
-        // 3. Mulai sound move saat pacman mulai bergerak
         soundManager.startMove();
 
         gamePanel.startSimulation(algorithm);
     }
 
     public void onGameFinished() {
-        // 4. Hentikan sound move (memotong jika < 6 detik) dan mainkan sound finish
         soundManager.stopMove();
         soundManager.playFinish();
 
@@ -182,7 +175,6 @@ public class PacmanMSTControl extends JFrame {
                 sidePanel.configureMode(true);
                 sidePanel.updateAlgorithm(algo);
 
-                // Mulai sound lagi untuk simulasi ulang
                 soundManager.startMove();
                 gamePanel.startSimulation(algo);
             } else {
@@ -201,13 +193,6 @@ public class PacmanMSTControl extends JFrame {
     }
 }
 
-// ... (Sisa kode SidePanel, LegendPanel, GamePanel, dan MazePlayer TETAP SAMA seperti sebelumnya) ...
-// Pastikan Anda tetap menyertakan kelas-kelas tersebut di bawah class PacmanMSTControl ini
-// agar file PacmanMSTControl.java tetap utuh.
-
-// ========================================================
-// 1. SIDE PANEL
-// ========================================================
 class SidePanel extends JPanel {
     private JLabel lblAlgo, lblStatus;
     private JLabel lblPathTitle;
@@ -222,7 +207,6 @@ class SidePanel extends JPanel {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         setBorder(new EmptyBorder(15, 15, 15, 15));
 
-        // --- TITLE ---
         JLabel title = new JLabel("STATISTICS");
         title.setForeground(Color.WHITE);
         title.setFont(new Font("Arial", Font.BOLD, 16));
@@ -230,7 +214,6 @@ class SidePanel extends JPanel {
         add(title);
         add(Box.createRigidArea(new Dimension(0, 20)));
 
-        // --- INFO UTAMA ---
         lblAlgo = createInfoLabel("Algorithm: -", Color.CYAN);
         lblStatus = createInfoLabel("Status: IDLE", Color.GRAY);
         add(lblAlgo);
@@ -238,7 +221,6 @@ class SidePanel extends JPanel {
         add(lblStatus);
         add(Box.createRigidArea(new Dimension(0, 20)));
 
-        // --- PATH ORDER ---
         lblPathTitle = createInfoLabel("Node Visit Order:", Color.MAGENTA);
         add(lblPathTitle);
         add(Box.createRigidArea(new Dimension(0, 5)));
@@ -257,7 +239,6 @@ class SidePanel extends JPanel {
 
         add(Box.createRigidArea(new Dimension(0, 15)));
 
-        // --- METRICS (Steps & Cost) ---
         lblSteps = createInfoLabel("Steps: 0", Color.WHITE);
         lblCost = createInfoLabel("Total Cost: 0", Color.ORANGE);
 
@@ -267,7 +248,6 @@ class SidePanel extends JPanel {
 
         add(Box.createRigidArea(new Dimension(0, 20)));
 
-        // --- LOG AREA ---
         JLabel lblLog = new JLabel("Event Log:");
         lblLog.setForeground(Color.LIGHT_GRAY);
         lblLog.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -287,7 +267,6 @@ class SidePanel extends JPanel {
         scroll.setAlignmentX(Component.LEFT_ALIGNMENT);
         add(scroll);
 
-        // --- LEGEND ---
         add(Box.createRigidArea(new Dimension(0, 10)));
         legendPanel = new LegendPanel();
         legendPanel.setVisible(false);
@@ -395,9 +374,6 @@ class LegendPanel extends JPanel {
     }
 }
 
-// ========================================================
-// 2. GAME PANEL
-// ========================================================
 class GamePanel extends JPanel implements ActionListener {
     private final int TILE_SIZE = 25;
     private final int ROWS = 21;
@@ -411,7 +387,6 @@ class GamePanel extends JPanel implements ActionListener {
     private int[][] perfectMaze;
     private int[][] terrainCosts;
 
-    // Renamed to MazePlayer to avoid conflict with Ladder Game "Player"
     private MazePlayer player;
     private List<Point> targets = new ArrayList<>();
     private Point startPoint, endPoint;
@@ -728,9 +703,7 @@ class GamePanel extends JPanel implements ActionListener {
     }
 }
 
-// ========================================================
-// 3. PLAYER & ALGORITHMS (RENAMED TO MazePlayer)
-// ========================================================
+// PLAYER & ALGORITHMS
 class MazePlayer {
     Color color;
     Point position;

@@ -16,7 +16,6 @@ public class GameStats {
         StringBuilder sb = new StringBuilder();
         sb.append("📊 GAME STATISTICS\n\n");
 
-        // --- TOP 3 SCORES ---
         sb.append("🏆 TOP 3 SCORES:\n");
         int count = 1;
         while (!scoreQueue.isEmpty() && count <= 3) {
@@ -26,7 +25,6 @@ public class GameStats {
 
         sb.append("\n");
 
-        // --- TOP 3 WINS ---
         sb.append("👑 TOP 3 WINS:\n");
         count = 1;
         while (!winQueue.isEmpty() && count <= 3) {

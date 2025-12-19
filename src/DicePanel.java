@@ -118,7 +118,6 @@ class DicePanel extends JPanel {
         rolled = true;
 
         rollAnimationTimer = new Timer(200, e -> {
-            // random angka 1–6
             dice.forceRandomDisplay();
 
             repaint();

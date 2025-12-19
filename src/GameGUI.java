@@ -369,7 +369,7 @@ class GameGUI extends JFrame {
 
         turnManager.nextTurn();
         Player nextPlayer = turnManager.getCurrentPlayer();
-        turnLabel.setText("Turn: " + nextPlayer.getName());
+        turnLabel.setText("Smurf & Ladder");
         rollButton.setEnabled(true);
         infoLabel.setText(nextPlayer.getName() + "'s turn");
         log("---");

@@ -10,9 +10,6 @@ class BoardNode {
         this.prev = null;
     }
 
-    public int getValue() { return value; }
-    public BoardNode getNext() { return next; }
-    public BoardNode getPrev() { return prev; }
     public void setNext(BoardNode next) { this.next = next; }
     public void setPrev(BoardNode prev) { this.prev = prev; }
 }
