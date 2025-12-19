@@ -1,4 +1,4 @@
-<h1 align="left">DSA Github Project Guidelinet</h1>
+<h1 align="left">DSA Github Project Guideline</h1>
 
 ###
   
